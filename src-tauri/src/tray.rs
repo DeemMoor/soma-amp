@@ -2,11 +2,11 @@
 // Плеер живёт в JS, поэтому команды плеера Rust не выполняет сам,
 // а отправляет окну событие `player-action`, и уже JS вызывает play()/pause()/step().
 
+use tauri::AppHandle;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager};
 
-use crate::MAIN_WINDOW;
+use crate::show_main_window;
 
 /// Что делать по пункту меню трея.
 #[derive(Debug, PartialEq)]
@@ -72,20 +72,6 @@ fn handle_menu(app: &AppHandle, id: &str) {
         Some(TrayAction::Show) => show_main_window(app),
         Some(TrayAction::Quit) => app.exit(0),
         None => {}
-    }
-}
-
-/// Показывает окно плеера: из трея, из свёрнутого состояния, и делает его активным.
-fn show_main_window(app: &AppHandle) {
-    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
-        return;
-    };
-    let result = window
-        .show()
-        .and_then(|()| window.unminimize())
-        .and_then(|()| window.set_focus());
-    if let Err(err) = result {
-        eprintln!("трей: не удалось показать окно: {err}");
     }
 }
 

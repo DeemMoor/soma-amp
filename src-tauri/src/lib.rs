@@ -4,7 +4,7 @@ mod media_keys;
 mod power;
 mod tray;
 
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 /// Метка главного окна (так оно называется в tauri.conf.json по умолчанию).
 const MAIN_WINDOW: &str = "main";
@@ -17,9 +17,28 @@ fn send_player_command(app: &AppHandle, cmd: &str) {
     }
 }
 
+/// Показывает окно плеера: из трея, из свёрнутого состояния, и делает его активным.
+fn show_main_window(app: &AppHandle) {
+    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
+        return;
+    };
+    let result = window
+        .show()
+        .and_then(|()| window.unminimize())
+        .and_then(|()| window.set_focus());
+    if let Err(err) = result {
+        eprintln!("не удалось показать окно: {err}");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // один экземпляр: второй запуск не открывает новое окно, а будит первое.
+        // Плагин подключаем первым — чтобы второй экземпляр закрылся раньше, чем что-то создаст
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_main_window(app);
+        }))
         // команды, которые JS может вызвать через invoke(...)
         .invoke_handler(tauri::generate_handler![power::system_action])
         .setup(|app| {
