@@ -12,7 +12,7 @@
       с текущими файлами.
 
 ## 1. Каркас Tauri
-- [ ] 1.1 `cargo tauri init` с фронтом из `ui/` (без dev-сервера, `frontendDist: "../ui"`).
+- [x] 1.1 `cargo tauri init` с фронтом из `ui/` (без dev-сервера, `frontendDist: "../ui"`).
       Окно 480×900, заголовок «Soma Amp», иконки из `ui/icon-512.png` (`cargo tauri icon`).
 - [ ] 1.2 Запустить `cargo tauri dev`, проверить, что каналы грузятся и **поток играет**.
       Если SomaFM отвечает 403 (может смотреть на Referer `tauri.localhost`) — остановиться
