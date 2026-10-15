@@ -11,10 +11,12 @@
     "windows": [
       {
         "title": "Soma Amp",
-        "width": 480,
+        "width": 476,
         "height": 900,
-        "resizable": true,
+        "resizable": false,
         "decorations": false,
+        "transparent": true,
+        "shadow": false,
         "fullscreen": false
       }
     ],

@@ -240,6 +240,9 @@ body {
 .credit a { color: inherit; }
 .desktop .bg, .desktop .credit { display: none; }
 html:not(.desktop) .desk-only { display: none; }
+/* В приложении окно прозрачное: видны только окна плеера, отступ 8px — место под их тень */
+html.desktop, .desktop body { background: transparent; }
+.desktop body { min-height: 0; padding: 8px; overflow: hidden; }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
   position: relative; margin-top: 6px; padding: 12px; border-radius: 12px;
@@ -1160,6 +1163,14 @@ if (IS_DESKTOP) {
   }));
   $('winMin').onclick = () => appWin.minimize();
   $('winClose').onclick = () => appWin.close();
+  // Окно ровно по размеру плеера: прозрачные пустые места всё равно ловят клики мыши.
+  // Следим за высотой (shade, скрытие эквалайзера/плейлиста) и подгоняем окно.
+  const fitWindow = () => {
+    const pad = parseFloat(getComputedStyle(document.body).paddingTop) * 2;
+    const h = Math.ceil($('amp').getBoundingClientRect().height + pad);
+    appWin.setSize(new window.__TAURI__.dpi.LogicalSize(476, h));
+  };
+  new ResizeObserver(fitWindow).observe($('amp'));
 }
 
 // ---------- таймер сна ----------
