@@ -817,10 +817,37 @@ const SKINS = {
 };
 
 const $ = id => document.getElementById(id);
-const store = {
+const store = IS_DESKTOP ? desktopStore() : {
   get(k, d) { try { const v = localStorage.getItem('somaamp2.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('somaamp2.' + k, JSON.stringify(v)); } catch {} },
 };
+// В приложении настройки живут в файле settings.json (Rust: src-tauri/src/settings.rs).
+// Rust кладёт их в window.__SOMA_SETTINGS__ ещё до запуска страницы, поэтому get остаётся мгновенным.
+function desktopStore() {
+  const { invoke } = window.__TAURI__.core;
+  const boot = window.__SOMA_SETTINGS__ || { existed: true, data: {} };
+  const cache = boot.data;
+  if (!boot.existed) {   // первый запуск с файлом настроек: забираем то, что лежало в localStorage
+    const old = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k.startsWith('somaamp2.')) old[k.slice(9)] = JSON.parse(localStorage.getItem(k));
+      }
+    } catch {}
+    for (const k in old) if (!(k in cache)) cache[k] = old[k];
+    invoke('settings_import', { entries: old }).catch(err => console.error('настройки:', err));
+  }
+  return {
+    // копия, как и у localStorage: правка полученного объекта не меняет сохранённое
+    get(k, d) { return k in cache ? structuredClone(cache[k]) : d; },
+    set(k, v) {
+      v = v === undefined ? null : JSON.parse(JSON.stringify(v));
+      if (v === null) delete cache[k]; else cache[k] = v;
+      invoke('settings_set', { key: k, value: v }).catch(err => console.error('настройки:', err));
+    },
+  };
+}
 
 // ---------- состояние ----------
 let channels = [];

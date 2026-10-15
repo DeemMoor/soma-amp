@@ -3,6 +3,7 @@
 mod autostart;
 mod media_keys;
 mod power;
+mod settings;
 mod tray;
 
 use tauri::{AppHandle, Emitter, Manager};
@@ -32,6 +33,26 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
+/// Создаёт главное окно по описанию из tauri.conf.json (там у него `create: false`).
+/// Создаём сами, а не отдаём Tauri, чтобы ещё до запуска страницы положить в окно настройки.
+fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let store = settings::SettingsStore::open(app.handle())?;
+    let script = store.init_script()?;
+    app.manage(store);
+
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == MAIN_WINDOW)
+        .ok_or("в tauri.conf.json нет окна main")?;
+    tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
+        .initialization_script(&script)
+        .build()?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -50,8 +71,11 @@ pub fn run() {
             power::system_action,
             autostart::autostart_enabled,
             autostart::set_autostart,
+            settings::settings_set,
+            settings::settings_import,
         ])
         .setup(|app| {
+            create_main_window(app)?;
             tray::create(app.handle())?;
             media_keys::init(app.handle())?;
             Ok(())
