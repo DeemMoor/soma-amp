@@ -1184,6 +1184,30 @@ if (IS_DESKTOP) {
   };
   new ResizeObserver(fitWindow).observe($('amp'));
   setOnTop(onTop);
+
+  // Позиция окна: запоминаем после перетаскивания, при запуске ставим обратно.
+  // Окно стартует невидимым (visible: false в tauri.conf.json), чтобы не прыгало из угла на место.
+  const { availableMonitors } = window.__TAURI__.window, { PhysicalPosition } = window.__TAURI__.dpi;
+  const restorePos = async () => {
+    try {
+      const p = store.get('winPos', null);
+      if (!p) return;
+      // монитор могли отключить: ставим окно, только если его заголовок попадает на какой-нибудь экран
+      const cx = p.x + 100, cy = p.y + 30;
+      const onScreen = (await availableMonitors()).some(m =>
+        cx >= m.position.x && cx < m.position.x + m.size.width && cy >= m.position.y && cy < m.position.y + m.size.height);
+      if (onScreen) await appWin.setPosition(new PhysicalPosition(p.x, p.y));
+    } finally {
+      appWin.show();
+    }
+  };
+  restorePos();
+  let posTimer;
+  appWin.onMoved(({ payload: { x, y } }) => {
+    if (x <= -32000) return;   // так Windows «прячет» свёрнутое окно — это не настоящая позиция
+    clearTimeout(posTimer);
+    posTimer = setTimeout(() => store.set('winPos', { x, y }), 300);
+  });
 }
 
 // ---------- таймер сна ----------
