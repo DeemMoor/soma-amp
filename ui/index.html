@@ -6,7 +6,13 @@
 <title>Soma Amp</title>
 <meta name="description" content="Радио SomaFM в плеере в стиле Winamp: chillout, ambient, lounge без рекламы и лимитов.">
 <meta name="theme-color" content="#2c3340">
-<link rel="manifest" href="/soma/manifest.webmanifest">
+<script>
+// IS_DESKTOP: страница открыта внутри приложения Soma Amp (Tauri), а не на сайте.
+// Тогда прячем то, что нужно только сайту: фото-фон, карточку «Установить», service worker, manifest.
+const IS_DESKTOP = !!window.__TAURI__;
+if (IS_DESKTOP) document.documentElement.classList.add('desktop');
+else document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/soma/manifest.webmanifest">');
+</script>
 <link rel="icon" type="image/png" sizes="192x192" href="/soma/icon-192.png">
 <link rel="apple-touch-icon" href="/soma/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -232,6 +238,7 @@ body {
   font: 10px var(--font-ui); color: rgba(255,240,220,.7); text-shadow: 0 1px 2px #000;
 }
 .credit a { color: inherit; }
+.desktop .bg, .desktop .credit { display: none; }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
   position: relative; margin-top: 6px; padding: 12px; border-radius: 12px;
@@ -1055,6 +1062,7 @@ function copyLink() {
 // тогда показываем пункт меню и кнопку. Safari его не шлёт: там «Поделиться → На экран Домой».
 let installEvt = null;
 window.addEventListener('beforeinstallprompt', e => {
+  if (IS_DESKTOP) return;
   e.preventDefault(); installEvt = e;
   $('installItem').hidden = false;
   showGetApp();
@@ -1069,7 +1077,7 @@ const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iPhon
   : /Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'компьютер';
 const browser = /Firefox\//.test(ua) ? 'firefox' : /Safari\//.test(ua) && !/Chrome|Chromium|Edg|YaBrowser/.test(ua) ? 'safari' : 'chromium';
 function showGetApp() {
-  if (isStandalone || location.protocol === 'file:' || store.get('gaHidden', false)) return;
+  if (IS_DESKTOP || isStandalone || location.protocol === 'file:' || store.get('gaHidden', false)) return;
   $('gaOs').textContent = os;
   $('getApp').hidden = false;
 }
@@ -1088,7 +1096,7 @@ $('gaBtn').onclick = () => {
 $('gaClose').onclick = () => { $('getApp').hidden = true; store.set('gaHidden', true); };
 showGetApp();
 function install() { if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => installEvt = null); } }
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+if (!IS_DESKTOP && 'serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('/soma/sw.js', { scope: '/soma/' }).catch(() => {});
 }
 const touch = matchMedia('(pointer: coarse)').matches;
