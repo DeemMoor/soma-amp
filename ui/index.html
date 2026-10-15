@@ -1243,11 +1243,16 @@ if (IS_DESKTOP) {
   $('winClose').onclick = () => appWin.close();
   // Окно ровно по размеру плеера: прозрачные пустые места всё равно ловят клики мыши.
   // Следим за высотой (shade, скрытие эквалайзера/плейлиста) и подгоняем окно.
-  const fitWindow = () => {
+  // firstFit сбудется после первой подгонки: окно показываем только после неё, иначе на старте
+  // оно мелькает размером из tauri.conf.json и прыгает к размеру плеера
+  let fitted;
+  const firstFit = new Promise(r => fitted = r);
+  const fitWindow = async () => {
     const cs = getComputedStyle(document.body), r = $('amp').getBoundingClientRect();
     const w = Math.ceil(r.width + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight));
     const h = Math.ceil(r.height + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom));
-    appWin.setSize(new window.__TAURI__.dpi.LogicalSize(w, h));
+    await appWin.setSize(new window.__TAURI__.dpi.LogicalSize(w, h)).catch(() => {});
+    fitted();
   };
   new ResizeObserver(fitWindow).observe($('amp'));
   setOnTop(onTop);
@@ -1286,6 +1291,8 @@ if (IS_DESKTOP) {
         cx >= m.position.x && cx < m.position.x + m.size.width && cy >= m.position.y && cy < m.position.y + m.size.height);
       if (onScreen) await appWin.setPosition(new PhysicalPosition(p.x, p.y));
     } finally {
+      // показываем, когда окно уже на месте и нужного размера; таймер — страховка, чтобы не остаться невидимым
+      await Promise.race([firstFit, new Promise(r => setTimeout(r, 1000))]);
       appWin.show();
     }
   };
