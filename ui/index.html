@@ -240,18 +240,22 @@ body {
 .credit a { color: inherit; }
 .desktop .bg, .desktop .credit { display: none; }
 html:not(.desktop) .desk-only { display: none; }
+.desktop .site-only { display: none; }
+.menu li button:disabled, .menu li button:disabled:hover { color: #999; background: none; cursor: default; }
 /* В приложении окно прозрачное: видны только окна плеера. Тень мягкая, как у окон Windows 11,
    а отступы — ровно под неё, чтобы край окна её не обрезал (снизу больше: тень смещена вниз) */
 html.desktop, .desktop body { background: transparent; }
 .desktop body { min-height: 0; padding: 16px 24px 36px; overflow: hidden; }
 /* Предупреждение перед сном/выключением компьютера (только в приложении) */
-.power-warn {
+.power-warn, .about-box {
   position: fixed; left: 50%; top: 35%; transform: translate(-50%, -50%); z-index: 50; width: 300px;
   padding: 16px; border-radius: 12px; text-align: center; background: rgba(22,22,28,.95); color: #e8e8ee;
   border: 1px solid rgba(255,255,255,.15); box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 13px var(--font-ui);
 }
-.power-warn p { margin: 0 0 12px; font-size: 16px; }
-.power-warn .ga-btn { width: 100%; }
+.power-warn p, .about-box p { margin: 0 0 12px; font-size: 16px; }
+.power-warn .ga-btn, .about-box .ga-btn { width: 100%; }
+.about-box .about-meta { font-size: 13px; line-height: 1.6; color: #c9c9d2; }
+.about-box a { color: #9cc4ff; }
 .desktop .win { box-shadow: inset 1px 1px 0 rgba(255,255,255,.7), inset -1px -1px 0 rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.2); }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
@@ -565,11 +569,9 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
       <span class="tb-btns"><button class="tb-btn" id="shade" title="Свернуть эквалайзер и плейлист">_</button><button class="tb-btn" data-shade="main" title="Shade-режим (двойной клик по заголовку)">▭</button><button class="tb-btn desk-only" id="winMin" title="Свернуть окно">−</button><button class="tb-btn desk-only" id="winClose" title="Закрыть">×</button></span></div>
     <nav class="menubar" id="menubar">
       <div class="menu"><button>File</button><ul>
-        <li><button data-act="copylink">Скопировать ссылку на канал</button></li>
+        <li class="site-only"><button data-act="copylink">Скопировать ссылку на канал</button></li>
         <li id="installItem" hidden><button data-act="install">Установить как приложение</button></li>
-        <li class="sep"></li>
-        <li><a href="https://somafm.com/" target="_blank" rel="noopener">Открыть SomaFM.com</a></li>
-        <li><a href="https://somafm.com/support/" target="_blank" rel="noopener">Поддержать SomaFM</a></li>
+        <li class="desk-only"><button data-act="quit">Выход</button></li>
       </ul></div>
       <div class="menu"><button>Play</button><ul>
         <li><button data-act="play">Играть <span class="k">X</span></button></li>
@@ -610,11 +612,17 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li><button data-act="toggle:pl" id="mViewPl">Плейлист <span class="k">Alt+E</span></button></li>
         <li class="sep"></li>
         <li><button data-act="tab:themes">Цветовые темы…</button></li>
-        <li class="sep"></li>
-        <li><button data-act="dock">Собрать окна вместе</button></li>
+        <li class="sep site-only"></li>
+        <li class="site-only"><button data-act="dock">Собрать окна вместе</button></li>
       </ul></div>
       <div class="menu"><button>Help</button><ul>
         <li><button data-act="tab:options">Горячие клавиши и о канале</button></li>
+        <li class="sep"></li>
+        <li><a href="https://somafm.com/" target="_blank" rel="noopener">Открыть SomaFM.com</a></li>
+        <li><a href="https://somafm.com/support/" target="_blank" rel="noopener">Поддержать SomaFM</a></li>
+        <li class="sep desk-only"></li>
+        <li class="desk-only"><button data-act="updates" disabled title="Появится вместе с автообновлением">Проверить обновления…</button></li>
+        <li class="desk-only"><button data-act="about">О программе</button></li>
       </ul></div>
     </nav>
 
@@ -776,6 +784,12 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
     <button class="ga-btn" id="gaBtn">Установить</button>
     <p class="ga-help" id="gaHelp" hidden></p>
   </aside>
+</div>
+<div class="about-box" id="aboutBox" hidden role="dialog" aria-labelledby="aboutTitle">
+  <p id="aboutTitle"><b>Soma Amp</b> <span id="aboutVer"></span></p>
+  <p class="about-meta">Плеер радио SomaFM в стиле Winamp<br>Автор: Deem Moor<br>
+    <a href="https://github.com/DeemMoor/soma-amp" target="_blank" rel="noopener">github.com/DeemMoor/soma-amp</a></p>
+  <button class="ga-btn" id="aboutClose">Закрыть</button>
 </div>
 <div class="power-warn" id="powerWarn" hidden role="alertdialog" aria-labelledby="powerText">
   <p id="powerText"></p>
@@ -1358,6 +1372,13 @@ function warnPower(action) {
 function cancelPower() { clearInterval(powerTimer); powerTimer = 0; $('powerWarn').hidden = true; }
 $('powerCancel').onclick = () => { cancelPower(); flash('Отменено'); };
 
+// Help → «О программе» (только в приложении): версию берём у самой программы (tauri.conf.json)
+async function showAbout() {
+  $('aboutVer').textContent = 'версия ' + await window.__TAURI__.app.getVersion().catch(() => '?');
+  $('aboutBox').hidden = false;
+}
+$('aboutClose').onclick = () => { $('aboutBox').hidden = true; };
+
 function visible() {
   const q = $('filter').value.trim().toLowerCase();
   let list = listMode === 'chill' ? CHILL.map(id => channels.find(c => c.id === id)).filter(Boolean)
@@ -1579,6 +1600,8 @@ function runAct(a) {
   else if (k === 'totray') setToTray(!toTray);
   else if (k === 'autostart') toggleAutostart();
   else if (k === 'sleepdo') setSleepDo(v);
+  else if (k === 'quit') window.__TAURI__.window.getCurrentWindow().destroy();   // последнее окно закрыто — программа завершается
+  else if (k === 'about') showAbout();
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
   else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }
