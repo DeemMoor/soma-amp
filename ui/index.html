@@ -1194,11 +1194,12 @@ if (IS_DESKTOP) {
   setToTray(toTray);
   appWin.onCloseRequested(e => { if (toTray) { e.preventDefault(); appWin.hide(); } });
 
-  // Команды из меню трея (их присылает Rust, см. src-tauri/src/tray.rs)
-  window.__TAURI__.event.listen('tray-action', ({ payload }) => {
+  // Команды из трея и с медиаклавиш (их присылает Rust: src-tauri/src/tray.rs, media_keys.rs)
+  window.__TAURI__.event.listen('player-action', ({ payload }) => {
     if (payload === 'toggle') state === 'stop' ? play() : pause();
     else if (payload === 'next') step(1);
     else if (payload === 'prev') step(-1);
+    else if (payload === 'stop') stop();
   });
 
   // Позиция окна: запоминаем после перетаскивания, при запуске ставим обратно.

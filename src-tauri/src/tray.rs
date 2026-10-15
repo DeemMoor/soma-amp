@@ -1,13 +1,12 @@
 // Иконка в трее (область уведомлений Windows) и её меню.
 // Плеер живёт в JS, поэтому команды плеера Rust не выполняет сам,
-// а отправляет окну событие `tray-action`, и уже JS вызывает play()/pause()/step().
+// а отправляет окну событие `player-action`, и уже JS вызывает play()/pause()/step().
 
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
-/// Метка главного окна (так оно называется в tauri.conf.json по умолчанию).
-const MAIN_WINDOW: &str = "main";
+use crate::MAIN_WINDOW;
 
 /// Что делать по пункту меню трея.
 #[derive(Debug, PartialEq)]
@@ -69,11 +68,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
 
 fn handle_menu(app: &AppHandle, id: &str) {
     match tray_action(id) {
-        Some(TrayAction::Player(cmd)) => {
-            if let Err(err) = app.emit_to(MAIN_WINDOW, "tray-action", cmd) {
-                eprintln!("трей: не удалось отправить «{cmd}» в окно: {err}");
-            }
-        }
+        Some(TrayAction::Player(cmd)) => crate::send_player_command(app, cmd),
         Some(TrayAction::Show) => show_main_window(app),
         Some(TrayAction::Quit) => app.exit(0),
         None => {}
