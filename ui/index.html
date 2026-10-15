@@ -239,6 +239,7 @@ body {
 }
 .credit a { color: inherit; }
 .desktop .bg, .desktop .credit { display: none; }
+html:not(.desktop) .desk-only { display: none; }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
   position: relative; margin-top: 6px; padding: 12px; border-radius: 12px;
@@ -548,7 +549,7 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <button class="mini" data-act="prev" title="Предыдущий канал">⏮</button><button class="mini" data-act="play" title="Играть">▶</button><button class="mini" data-act="pause" title="Пауза">⏸</button><button class="mini" data-act="stop" title="Стоп">⏹</button><button class="mini" data-act="next" title="Следующий канал">⏭</button>
         <span class="sh-time" id="shadeTime">00:00</span><span class="sh-text" id="shadeText"></span>
       </span>
-      <span class="tb-btns"><button class="tb-btn" id="shade" title="Свернуть эквалайзер и плейлист">_</button><button class="tb-btn" data-shade="main" title="Shade-режим (двойной клик по заголовку)">▭</button></span></div>
+      <span class="tb-btns"><button class="tb-btn" id="shade" title="Свернуть эквалайзер и плейлист">_</button><button class="tb-btn" data-shade="main" title="Shade-режим (двойной клик по заголовку)">▭</button><button class="tb-btn desk-only" id="winMin" title="Свернуть окно">−</button><button class="tb-btn desk-only" id="winClose" title="Закрыть">×</button></span></div>
     <nav class="menubar" id="menubar">
       <div class="menu"><button>File</button><ul>
         <li><button data-act="copylink">Скопировать ссылку на канал</button></li>
@@ -1149,6 +1150,17 @@ function initWindows() {
   if (!canDrag()) Object.keys(WINS).forEach(n => $(WINS[n]).style.transform = '');
 }
 addEventListener('resize', () => $('amp').classList.toggle('draggable', canDrag()));
+
+// В приложении системной рамки нет: окно двигаем за любой заголовок .tb, а свернуть/закрыть — кнопками.
+// Не data-tauri-drag-region: у него двойной клик разворачивает окно, а у нас двойной клик — shade-режим.
+if (IS_DESKTOP) {
+  const appWin = window.__TAURI__.window.getCurrentWindow();
+  document.querySelectorAll('.tb').forEach(tb => tb.addEventListener('mousedown', e => {
+    if (e.button === 0 && e.detail === 1 && !e.target.closest('button')) appWin.startDragging();
+  }));
+  $('winMin').onclick = () => appWin.minimize();
+  $('winClose').onclick = () => appWin.close();
+}
 
 // ---------- таймер сна ----------
 function applyVolume() { if (audio) audio.volume = ($('volume').value / 100) * fade; }
