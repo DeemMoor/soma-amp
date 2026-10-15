@@ -240,9 +240,11 @@ body {
 .credit a { color: inherit; }
 .desktop .bg, .desktop .credit { display: none; }
 html:not(.desktop) .desk-only { display: none; }
-/* В приложении окно прозрачное: видны только окна плеера, отступ 8px — место под их тень */
+/* В приложении окно прозрачное: видны только окна плеера. Тень мягкая, как у окон Windows 11,
+   а отступы — ровно под неё, чтобы край окна её не обрезал (снизу больше: тень смещена вниз) */
 html.desktop, .desktop body { background: transparent; }
-.desktop body { min-height: 0; padding: 8px; overflow: hidden; }
+.desktop body { min-height: 0; padding: 16px 24px 36px; overflow: hidden; }
+.desktop .win { box-shadow: inset 1px 1px 0 rgba(255,255,255,.7), inset -1px -1px 0 rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.2); }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
   position: relative; margin-top: 6px; padding: 12px; border-radius: 12px;
@@ -1166,9 +1168,10 @@ if (IS_DESKTOP) {
   // Окно ровно по размеру плеера: прозрачные пустые места всё равно ловят клики мыши.
   // Следим за высотой (shade, скрытие эквалайзера/плейлиста) и подгоняем окно.
   const fitWindow = () => {
-    const pad = parseFloat(getComputedStyle(document.body).paddingTop) * 2;
-    const h = Math.ceil($('amp').getBoundingClientRect().height + pad);
-    appWin.setSize(new window.__TAURI__.dpi.LogicalSize(476, h));
+    const cs = getComputedStyle(document.body), r = $('amp').getBoundingClientRect();
+    const w = Math.ceil(r.width + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight));
+    const h = Math.ceil(r.height + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom));
+    appWin.setSize(new window.__TAURI__.dpi.LogicalSize(w, h));
   };
   new ResizeObserver(fitWindow).observe($('amp'));
 }
