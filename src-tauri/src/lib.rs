@@ -1,6 +1,7 @@
 // Точка сборки приложения: здесь настраиваем Tauri и запускаем окно.
 // Позже сюда же добавятся команды, которые JS вызывает в Rust.
 mod media_keys;
+mod power;
 mod tray;
 
 use tauri::{AppHandle, Emitter};
@@ -19,6 +20,8 @@ fn send_player_command(app: &AppHandle, cmd: &str) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // команды, которые JS может вызвать через invoke(...)
+        .invoke_handler(tauri::generate_handler![power::system_action])
         .setup(|app| {
             tray::create(app.handle())?;
             media_keys::init(app.handle())?;

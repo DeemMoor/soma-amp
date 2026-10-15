@@ -244,6 +244,14 @@ html:not(.desktop) .desk-only { display: none; }
    а отступы — ровно под неё, чтобы край окна её не обрезал (снизу больше: тень смещена вниз) */
 html.desktop, .desktop body { background: transparent; }
 .desktop body { min-height: 0; padding: 16px 24px 36px; overflow: hidden; }
+/* Предупреждение перед сном/выключением компьютера (только в приложении) */
+.power-warn {
+  position: fixed; left: 50%; top: 35%; transform: translate(-50%, -50%); z-index: 50; width: 300px;
+  padding: 16px; border-radius: 12px; text-align: center; background: rgba(22,22,28,.95); color: #e8e8ee;
+  border: 1px solid rgba(255,255,255,.15); box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 13px var(--font-ui);
+}
+.power-warn p { margin: 0 0 12px; font-size: 16px; }
+.power-warn .ga-btn { width: 100%; }
 .desktop .win { box-shadow: inset 1px 1px 0 rgba(255,255,255,.7), inset -1px -1px 0 rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.2); }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
@@ -591,6 +599,10 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li><button data-act="sleep:30" data-sleep="30">Таймер сна: 30 мин</button></li>
         <li><button data-act="sleep:60" data-sleep="60">Таймер сна: 60 мин</button></li>
         <li><button data-act="sleep:90" data-sleep="90">Таймер сна: 90 мин</button></li>
+        <li class="sep desk-only"></li>
+        <li class="desk-only"><button data-act="sleepdo:stop" data-sleepdo="stop">По окончании: просто стоп</button></li>
+        <li class="desk-only"><button data-act="sleepdo:sleep" data-sleepdo="sleep">По окончании: сон компьютера</button></li>
+        <li class="desk-only"><button data-act="sleepdo:shutdown" data-sleepdo="shutdown">По окончании: выключить компьютер</button></li>
       </ul></div>
       <div class="menu"><button>View</button><ul>
         <li><button data-act="toggle:eq" id="mViewEq">Эквалайзер <span class="k">Alt+G</span></button></li>
@@ -763,6 +775,10 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
     <button class="ga-btn" id="gaBtn">Установить</button>
     <p class="ga-help" id="gaHelp" hidden></p>
   </aside>
+</div>
+<div class="power-warn" id="powerWarn" hidden role="alertdialog" aria-labelledby="powerText">
+  <p id="powerText"></p>
+  <button class="ga-btn" id="powerCancel">Отмена</button>
 </div>
 
 <script>
@@ -1192,6 +1208,7 @@ if (IS_DESKTOP) {
   new ResizeObserver(fitWindow).observe($('amp'));
   setOnTop(onTop);
   setToTray(toTray);
+  document.querySelector('[data-sleepdo="stop"]').setAttribute('aria-checked', 'true');
   appWin.onCloseRequested(e => { if (toTray) { e.preventDefault(); appWin.hide(); } });
 
   // Команды из трея и с медиаклавиш (их присылает Rust: src-tauri/src/tray.rs, media_keys.rs)
@@ -1243,12 +1260,42 @@ function setSleep(min) {
 function tickSleep() {
   if (!sleepEnd) return;
   const left = sleepEnd - Date.now();
-  if (left <= 0) { stop(); setSleep(0); return; }
+  if (left <= 0) { stop(); setSleep(0); if (IS_DESKTOP && sleepDo !== 'stop') warnPower(sleepDo); return; }
   $('sleepBox').textContent = Math.ceil(left / 60000) + "'";
   // последняя минута — громкость плавно уходит в ноль
   const f = left < FADE_MS ? left / FADE_MS : 1;
   if (Math.abs(f - fade) > 0.005) { fade = f; applyVolume(); }
 }
+
+// requestAnimationFrame стоит, пока окно свёрнуто или спрятано в трей, —
+// поэтому таймер сна проверяем ещё и раз в секунду: setInterval в фоне работает, пока играет звук
+setInterval(tickSleep, 1000);
+
+// Что сделать по окончании таймера (только в приложении): stop / sleep / shutdown.
+// Нарочно НЕ запоминаем между запусками: забытое «выключить» может стоить несохранённой работы.
+let sleepDo = 'stop';
+function setSleepDo(v) {
+  sleepDo = v;
+  document.querySelectorAll('[data-sleepdo]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sleepdo === v)));
+  flash({ stop: 'По окончании таймера: стоп', sleep: 'По окончании таймера: сон компьютера', shutdown: 'По окончании таймера: выключение' }[v]);
+}
+// Перед сном/выключением — 60 секунд с кнопкой «Отмена», окно всплывает из трея
+let powerTimer = 0;
+function warnPower(action) {
+  const win = window.__TAURI__.window.getCurrentWindow();
+  win.show(); win.unminimize(); win.setFocus();
+  const end = Date.now() + 60000, what = action === 'shutdown' ? 'Компьютер выключится' : 'Компьютер уснёт';
+  $('powerWarn').hidden = false;
+  const tick = () => {
+    const left = Math.ceil((end - Date.now()) / 1000);
+    if (left > 0) { $('powerText').textContent = `${what} через ${left} с`; return; }
+    cancelPower();
+    window.__TAURI__.core.invoke('system_action', { action }).then(msg => msg && flash(msg), err => flash('Ошибка: ' + err));
+  };
+  tick(); powerTimer = setInterval(tick, 250);
+}
+function cancelPower() { clearInterval(powerTimer); powerTimer = 0; $('powerWarn').hidden = true; }
+$('powerCancel').onclick = () => { cancelPower(); flash('Отменено'); };
 
 function visible() {
   const q = $('filter').value.trim().toLowerCase();
@@ -1469,6 +1516,7 @@ function runAct(a) {
   else if (k === 'install') install();
   else if (k === 'ontop') setOnTop(!onTop);
   else if (k === 'totray') setToTray(!toTray);
+  else if (k === 'sleepdo') setSleepDo(v);
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
   else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }
