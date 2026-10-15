@@ -584,6 +584,7 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li class="sep"></li>
         <li><button data-act="hq" id="mHq">Максимальное качество (до 320 kbps)</button></li>
         <li class="desk-only"><button data-act="ontop" id="mOnTop">Поверх всех окон</button></li>
+        <li class="desk-only"><button data-act="totray" id="mToTray">Закрывать в трей</button></li>
         <li class="sep"></li>
         <li><button data-act="sleep:0" data-sleep="0">Таймер сна: выкл <span class="k">T</span></button></li>
         <li><button data-act="sleep:15" data-sleep="15">Таймер сна: 15 мин</button></li>
@@ -1164,6 +1165,12 @@ function setOnTop(on) {
   $('mOnTop').setAttribute('aria-checked', String(on));
   window.__TAURI__.window.getCurrentWindow().setAlwaysOnTop(on);
 }
+// «Закрывать в трей»: × и Alt+F4 прячут окно, а музыка играет дальше. По умолчанию включено.
+let toTray = store.get('toTray', true);
+function setToTray(on) {
+  toTray = on; store.set('toTray', on);
+  $('mToTray').setAttribute('aria-checked', String(on));
+}
 
 // В приложении системной рамки нет: окно двигаем за любой заголовок .tb, а свернуть/закрыть — кнопками.
 // Не data-tauri-drag-region: у него двойной клик разворачивает окно, а у нас двойной клик — shade-режим.
@@ -1184,6 +1191,15 @@ if (IS_DESKTOP) {
   };
   new ResizeObserver(fitWindow).observe($('amp'));
   setOnTop(onTop);
+  setToTray(toTray);
+  appWin.onCloseRequested(e => { if (toTray) { e.preventDefault(); appWin.hide(); } });
+
+  // Команды из меню трея (их присылает Rust, см. src-tauri/src/tray.rs)
+  window.__TAURI__.event.listen('tray-action', ({ payload }) => {
+    if (payload === 'toggle') state === 'stop' ? play() : pause();
+    else if (payload === 'next') step(1);
+    else if (payload === 'prev') step(-1);
+  });
 
   // Позиция окна: запоминаем после перетаскивания, при запуске ставим обратно.
   // Окно стартует невидимым (visible: false в tauri.conf.json), чтобы не прыгало из угла на место.
@@ -1451,6 +1467,7 @@ function runAct(a) {
   else if (k === 'copylink') copyLink();
   else if (k === 'install') install();
   else if (k === 'ontop') setOnTop(!onTop);
+  else if (k === 'totray') setToTray(!toTray);
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
   else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }
