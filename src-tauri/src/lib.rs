@@ -1,5 +1,6 @@
 // Точка сборки приложения: здесь настраиваем Tauri и запускаем окно.
 // Позже сюда же добавятся команды, которые JS вызывает в Rust.
+mod autostart;
 mod media_keys;
 mod power;
 mod tray;
@@ -39,8 +40,17 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show_main_window(app);
         }))
+        // автозапуск с Windows; LaunchAgent — способ для macOS, на Windows не используется
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         // команды, которые JS может вызвать через invoke(...)
-        .invoke_handler(tauri::generate_handler![power::system_action])
+        .invoke_handler(tauri::generate_handler![
+            power::system_action,
+            autostart::autostart_enabled,
+            autostart::set_autostart,
+        ])
         .setup(|app| {
             tray::create(app.handle())?;
             media_keys::init(app.handle())?;

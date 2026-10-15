@@ -593,6 +593,7 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li><button data-act="hq" id="mHq">Максимальное качество (до 320 kbps)</button></li>
         <li class="desk-only"><button data-act="ontop" id="mOnTop">Поверх всех окон</button></li>
         <li class="desk-only"><button data-act="totray" id="mToTray">Закрывать в трей</button></li>
+        <li class="desk-only"><button data-act="autostart" id="mAutostart">Запускать вместе с Windows</button></li>
         <li class="sep"></li>
         <li><button data-act="sleep:0" data-sleep="0">Таймер сна: выкл <span class="k">T</span></button></li>
         <li><button data-act="sleep:15" data-sleep="15">Таймер сна: 15 мин</button></li>
@@ -1181,6 +1182,22 @@ function setOnTop(on) {
   $('mOnTop').setAttribute('aria-checked', String(on));
   window.__TAURI__.window.getCurrentWindow().setAlwaysOnTop(on);
 }
+// «Запускать вместе с Windows»: состояние спрашиваем у системы (Rust, src-tauri/src/autostart.rs),
+// а не храним сами — автозагрузку могут выключить и в Диспетчере задач
+async function syncAutostart() {
+  const on = await window.__TAURI__.core.invoke('autostart_enabled').catch(() => false);
+  $('mAutostart').setAttribute('aria-checked', String(on));
+  return on;
+}
+async function toggleAutostart() {
+  const { invoke } = window.__TAURI__.core;
+  try {
+    const on = !(await syncAutostart());
+    await invoke('set_autostart', { enabled: on });
+    flash(on ? 'Soma Amp будет запускаться вместе с Windows' : 'Автозапуск выключен');
+  } catch (err) { flash('Автозапуск: ' + err); }
+  syncAutostart();
+}
 // «Закрывать в трей»: × и Alt+F4 прячут окно, а музыка играет дальше. По умолчанию включено.
 let toTray = store.get('toTray', true);
 function setToTray(on) {
@@ -1208,6 +1225,7 @@ if (IS_DESKTOP) {
   new ResizeObserver(fitWindow).observe($('amp'));
   setOnTop(onTop);
   setToTray(toTray);
+  syncAutostart();
   document.querySelector('[data-sleepdo="stop"]').setAttribute('aria-checked', 'true');
   appWin.onCloseRequested(e => { if (toTray) { e.preventDefault(); appWin.hide(); } });
 
@@ -1516,6 +1534,7 @@ function runAct(a) {
   else if (k === 'install') install();
   else if (k === 'ontop') setOnTop(!onTop);
   else if (k === 'totray') setToTray(!toTray);
+  else if (k === 'autostart') toggleAutostart();
   else if (k === 'sleepdo') setSleepDo(v);
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
