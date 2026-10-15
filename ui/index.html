@@ -1,0 +1,1483 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soma Amp</title>
+<meta name="description" content="Радио SomaFM в плеере в стиле Winamp: chillout, ambient, lounge без рекламы и лимитов.">
+<meta name="theme-color" content="#2c3340">
+<link rel="manifest" href="/soma/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/soma/icon-192.png">
+<link rel="apple-touch-icon" href="/soma/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Soma Amp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- шрифты дисплея для тем; браузер скачивает только те, что реально видны на экране -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oxanium:wght@500&family=Pixelify+Sans&family=Fira+Mono&family=Orbitron:wght@500&family=Ubuntu+Mono:wght@700&family=Comfortaa:wght@600&family=Audiowide&family=JetBrains+Mono:wght@500&family=Cinzel:wght@600&family=Courier+Prime:wght@700&family=IBM+Plex+Mono:wght@500&family=M+PLUS+Rounded+1c:wght@500&family=Space+Mono:wght@700&family=Chakra+Petch:wght@600&family=Silkscreen&display=swap">
+<style>
+/* Layout: Winamp 5 Modern-style stack — main window, equalizer, playlist editor — centered, ~460px wide */
+:root, [data-skin] {
+  --desk: #3a6ea5;
+  --frame-hi: #f4f6fa; --frame: #c9d0da; --frame-lo: #8e98a7; --frame-edge: #4d5868;
+  --title-a: #5b6576; --title-b: #2c3340; --title-fg: #eef2f8;
+  --lcd-a: #0c2161; --lcd-b: #1d3d97; --lcd-fg: #bfe0ff; --lcd-dim: #5c84c8; --lcd-glow: rgba(150,200,255,.45);
+  --pl-bg: #10296e; --pl-fg: #e6eeff; --pl-dim: #8fa8de; --pl-sel: #2d5bd0;
+  --ink: #1d2430; --ink-dim: #4f5a6b;
+  --accent: #f08a1c;
+  /* кнопки, лампочки и ползунки — тоже часть скина */
+  --btn-hi: #fff; --btn-a: #e3e8ef; --btn-b: #aeb8c6; --btn-fg: #23324d;
+  --on-a: #9fc0f0; --on-b: #5f86c9; --on-fg: #fff; --led: #6fd3ff;
+  --track-a: #6f7a8c; --track-b: #c9d0da; --vtrack-a: #2a3446; --vtrack-b: #59657a; --thumb-edge: #3a4454;
+  --pl-cur: #fff;
+  --win-bg: linear-gradient(180deg, var(--frame-hi), var(--frame) 30%, var(--frame) 70%, var(--frame-lo));
+  --font-lcd: "Share Tech Mono", "Consolas", monospace; --lcd-k: 1;  /* шрифт дисплея и его масштаб: у широких шрифтов k меньше */
+  --font-ui: "Tahoma", "Segoe UI", "Verdana", sans-serif;
+  color-scheme: light;
+}
+[data-skin="graphite"] {
+  --font-lcd: "Oxanium", monospace; --lcd-k: 1.05;
+  --frame-hi: #8a8f98; --frame: #5c616a; --frame-lo: #3b3f46; --frame-edge: #1c1e22;
+  --title-a: #2f3238; --title-b: #141518; --title-fg: #f1c26b;
+  --lcd-a: #1a1206; --lcd-b: #2d2009; --lcd-fg: #ffc35a; --lcd-dim: #8a6a2c; --lcd-glow: rgba(255,190,80,.45);
+  --pl-bg: #17130c; --pl-fg: #f5dcae; --pl-dim: #9c8459; --pl-sel: #6b4a12;
+  --ink: #f0f1f3; --ink-dim: #c3c7cf;
+}
+[data-skin="classic"] {
+  --font-lcd: "Pixelify Sans", monospace; --lcd-k: 1;
+  --frame-hi: #6d7384; --frame: #3f4452; --frame-lo: #2a2e38; --frame-edge: #12141a;
+  --title-a: #2b3a8a; --title-b: #131c52; --title-fg: #d6dcff;
+  --lcd-a: #000; --lcd-b: #050a05; --lcd-fg: #00e33b; --lcd-dim: #10692a; --lcd-glow: rgba(0,227,59,.45);
+  --pl-bg: #000; --pl-fg: #00e33b; --pl-dim: #10a33a; --pl-sel: #0a2a9a;
+  --ink: #e4e7ef; --ink-dim: #a9b0c0;
+}
+[data-skin="mint"] {
+  --font-lcd: "Fira Mono", monospace; --lcd-k: .95;
+  --frame-hi: #f2fbf7; --frame: #c4dfd4; --frame-lo: #87ab9c; --frame-edge: #3d5a4f;
+  --title-a: #3f6b5d; --title-b: #1f3a31; --title-fg: #eafff6;
+  --lcd-a: #072a22; --lcd-b: #0d4537; --lcd-fg: #9ff5d4; --lcd-dim: #3f9c7e; --lcd-glow: rgba(140,255,210,.4);
+  --pl-bg: #0a3329; --pl-fg: #dcfff0; --pl-dim: #7fc4aa; --pl-sel: #1f7a60;
+}
+
+/* ===== Скины «с фантазией». Каждый — набор переменных; всё остальное CSS берёт из них ===== */
+/* Lambo: карбоновый корпус, оранжевый Arancio, приборка как в суперкаре */
+[data-skin="lambo"] {
+  --font-lcd: "Orbitron", sans-serif; --lcd-k: .82;
+  --frame-hi: #3c3c3c; --frame: #232323; --frame-lo: #141414; --frame-edge: #000;
+  --win-bg: repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 2px, transparent 2px 4px),
+            repeating-linear-gradient(-45deg, rgba(0,0,0,.35) 0 2px, transparent 2px 4px),
+            linear-gradient(180deg, #3a3a3a, #1e1e1e 30%, #161616);
+  --title-a: #ffa41b; --title-b: #e85d04; --title-fg: #111;
+  --lcd-a: #050505; --lcd-b: #1c1408; --lcd-fg: #ffb000; --lcd-dim: #7a5200; --lcd-glow: rgba(255,170,0,.55);
+  --pl-bg: #0b0b0b; --pl-fg: #ffdcaa; --pl-dim: #a8743a; --pl-sel: #8a3a00; --pl-cur: #ffb000;
+  --ink: #f2f2f2; --ink-dim: #b0b0b0; --accent: #ff8c00;
+  --btn-hi: #555; --btn-a: #2e2e2e; --btn-b: #141414; --btn-fg: #ffb000;
+  --on-a: #ffb347; --on-b: #e86a00; --on-fg: #111; --led: #ffb000;
+  --track-a: #000; --track-b: #3a3a3a; --vtrack-a: #000; --vtrack-b: #2b2b2b; --thumb-edge: #000;
+}
+/* Ubuntu: баклажановый корпус и фирменный оранжевый */
+[data-skin="ubuntu"] {
+  --font-lcd: "Ubuntu Mono", monospace; --lcd-k: 1.12;
+  --frame-hi: #7a4569; --frame: #4f2142; --frame-lo: #330b28; --frame-edge: #1a0414;
+  --title-a: #f2672f; --title-b: #c7400e; --title-fg: #fff;
+  --lcd-a: #1d0516; --lcd-b: #3d0f30; --lcd-fg: #f6f6f5; --lcd-dim: #aea79f; --lcd-glow: rgba(233,84,32,.45);
+  --pl-bg: #2c001e; --pl-fg: #f6f6f5; --pl-dim: #b9a7b3; --pl-sel: #e95420;
+  --ink: #f6f6f5; --ink-dim: #d8c6d2; --accent: #e95420;
+  --btn-hi: #fff; --btn-a: #f2efed; --btn-b: #aea79f; --btn-fg: #300a24;
+  --on-a: #f7895a; --on-b: #e95420; --on-fg: #fff; --led: #ff8a50;
+  --track-a: #1d0516; --track-b: #77216f; --vtrack-a: #1d0516; --vtrack-b: #5e2750; --thumb-edge: #1a0414;
+}
+/* Marshmallow: пастель — розовый, сиреневый, голубой, светлый дисплей */
+[data-skin="marshmallow"] {
+  --font-lcd: "Comfortaa", sans-serif; --lcd-k: .95;
+  --frame-hi: #fff; --frame: #fbe4ef; --frame-lo: #e9c3d8; --frame-edge: #b98aa8;
+  --title-a: #ffc8dd; --title-b: #cdb4db; --title-fg: #5a3d66;
+  --lcd-a: #efe2ff; --lcd-b: #fff6fd; --lcd-fg: #5e2f8a; --lcd-dim: #a982cc; --lcd-glow: rgba(205,170,230,.6);
+  --pl-bg: #fff7fb; --pl-fg: #6b4a7a; --pl-dim: #b597c4; --pl-sel: #ffd6e8; --pl-cur: #c2185b;
+  --ink: #5a3d66; --ink-dim: #9a7aa8; --accent: #ff8fab;
+  --btn-hi: #fff; --btn-a: #fffafc; --btn-b: #f2d2e4; --btn-fg: #7b4fa0;
+  --on-a: #cfe8ff; --on-b: #a2d2ff; --on-fg: #3d5a80; --led: #ff8fab;
+  --track-a: #e9c3d8; --track-b: #fff; --vtrack-a: #d9b3cc; --vtrack-b: #fff0f7; --thumb-edge: #b98aa8;
+}
+/* Miami: неон 80-х — розовый с бирюзой на ночном фиолетовом */
+[data-skin="miami"] {
+  --font-lcd: "Audiowide", sans-serif; --lcd-k: .88;
+  --frame-hi: #5a2f80; --frame: #2f1650; --frame-lo: #1a0b2e; --frame-edge: #07020f;
+  --title-a: #ff6ec7; --title-b: #9b3ff0; --title-fg: #fff;
+  --lcd-a: #0b0420; --lcd-b: #220b44; --lcd-fg: #3ff5ff; --lcd-dim: #8a4fd0; --lcd-glow: rgba(63,245,255,.7);
+  --pl-bg: #120628; --pl-fg: #ffd1f3; --pl-dim: #b07ad8; --pl-sel: #c2187f; --pl-cur: #3ff5ff;
+  --ink: #ffe8fb; --ink-dim: #c9a6e6; --accent: #3ff5ff;
+  --btn-hi: #ffe0f6; --btn-a: #ff9ad5; --btn-b: #a845e6; --btn-fg: #1a0b2e;
+  --on-a: #8ffaff; --on-b: #14b8d6; --on-fg: #0b0420; --led: #3ff5ff;
+  --track-a: #0b0420; --track-b: #5a2a8a; --vtrack-a: #0b0420; --vtrack-b: #4a1f75; --thumb-edge: #07020f;
+}
+/* Tokyo Night: глубокий ночной синий, лавандовый дисплей */
+[data-skin="tokyo"] {
+  --font-lcd: "JetBrains Mono", monospace; --lcd-k: .92;
+  --frame-hi: #3b4261; --frame: #24283b; --frame-lo: #1a1b26; --frame-edge: #0d0e14;
+  --title-a: #414868; --title-b: #1f2335; --title-fg: #7dcfff;
+  --lcd-a: #13131a; --lcd-b: #1f2033; --lcd-fg: #bb9af7; --lcd-dim: #565f89; --lcd-glow: rgba(187,154,247,.55);
+  --pl-bg: #16161e; --pl-fg: #c0caf5; --pl-dim: #6b74a0; --pl-sel: #364a82; --pl-cur: #7dcfff;
+  --ink: #c0caf5; --ink-dim: #9aa5ce; --accent: #ff9e64;
+  --btn-hi: #6b74a0; --btn-a: #3b4261; --btn-b: #262a3e; --btn-fg: #c0caf5;
+  --on-a: #8db0ff; --on-b: #3d59a1; --on-fg: #fff; --led: #9ece6a;
+  --track-a: #13131a; --track-b: #3b4261; --vtrack-a: #13131a; --vtrack-b: #2f3550; --thumb-edge: #0d0e14;
+}
+/* Champagne: золото и чёрный лак, как дорогой винил */
+[data-skin="champagne"] {
+  --font-lcd: "Cinzel", serif; --lcd-k: .95;
+  --frame-hi: #fff4d6; --frame: #e2c98f; --frame-lo: #b8975a; --frame-edge: #5e4a22;
+  --title-a: #2e2619; --title-b: #0f0c07; --title-fg: #f3d78a;
+  --lcd-a: #0b0906; --lcd-b: #221c10; --lcd-fg: #ffd97a; --lcd-dim: #8c7440; --lcd-glow: rgba(255,217,122,.55);
+  --pl-bg: #14110b; --pl-fg: #f6e3b4; --pl-dim: #a89060; --pl-sel: #6b5427; --pl-cur: #ffd97a;
+  --ink: #2b2418; --ink-dim: #5e4d2c; --accent: #c9a227;
+  --btn-hi: #fffbe9; --btn-a: #f3e2b3; --btn-b: #c9a865; --btn-fg: #3a2f1a;
+  --on-a: #3a3020; --on-b: #120e08; --on-fg: #ffd97a; --led: #ffd97a;
+  --track-a: #5e4a22; --track-b: #e8d49e; --vtrack-a: #1a150c; --vtrack-b: #5e4a22; --thumb-edge: #5e4a22;
+}
+/* Espresso: кофейный корпус и кремовый «бумажный» дисплей */
+[data-skin="espresso"] {
+  --font-lcd: "Courier Prime", monospace; --lcd-k: .98;
+  --frame-hi: #a37e60; --frame: #6f4e37; --frame-lo: #4a3222; --frame-edge: #22150d;
+  --title-a: #3b2618; --title-b: #1d120a; --title-fg: #f5e6d3;
+  --lcd-a: #eadbc2; --lcd-b: #fff8ea; --lcd-fg: #4a2c17; --lcd-dim: #b09276; --lcd-glow: rgba(120,70,30,.25);
+  --pl-bg: #2a1b12; --pl-fg: #f1dfc6; --pl-dim: #b08e6d; --pl-sel: #8b5a35; --pl-cur: #ffcf8f;
+  --ink: #f5e6d3; --ink-dim: #dcc4a8; --accent: #d9a066;
+  --btn-hi: #fff8ec; --btn-a: #ecd9bf; --btn-b: #b8977a; --btn-fg: #3b2618;
+  --on-a: #e2ad73; --on-b: #a0672f; --on-fg: #fff; --led: #ffb86b;
+  --track-a: #22150d; --track-b: #8b6a50; --vtrack-a: #22150d; --vtrack-b: #5c4030; --thumb-edge: #22150d;
+}
+/* Arctic: холодный северный — лёд, снег и полярное сияние на дисплее */
+[data-skin="arctic"] {
+  --font-lcd: "IBM Plex Mono", monospace; --lcd-k: .92;
+  --frame-hi: #f4f7fb; --frame: #d8dee9; --frame-lo: #a9b4c6; --frame-edge: #4c566a;
+  --title-a: #5e81ac; --title-b: #3b4252; --title-fg: #eceff4;
+  --lcd-a: #242933; --lcd-b: #3b4252; --lcd-fg: #88f0d0; --lcd-dim: #5e81ac; --lcd-glow: rgba(136,240,208,.5);
+  --pl-bg: #2e3440; --pl-fg: #e5e9f0; --pl-dim: #81a1c1; --pl-sel: #5e81ac; --pl-cur: #8fbcbb;
+  --ink: #2e3440; --ink-dim: #4c566a; --accent: #bf616a;
+  --btn-hi: #fff; --btn-a: #eceff4; --btn-b: #c2cbd9; --btn-fg: #2e3440;
+  --on-a: #a8dbe6; --on-b: #5e9fb8; --on-fg: #fff; --led: #88f0d0;
+}
+/* Sakura: розовый лепесток и тёмная вишня */
+[data-skin="sakura"] {
+  --font-lcd: "M PLUS Rounded 1c", sans-serif; --lcd-k: .98;
+  --frame-hi: #fff7f9; --frame: #f7d6df; --frame-lo: #d9a3b4; --frame-edge: #7a3f52;
+  --title-a: #3a2230; --title-b: #1e1118; --title-fg: #ffc0d3;
+  --lcd-a: #1e1118; --lcd-b: #3d1d2d; --lcd-fg: #ffb7c9; --lcd-dim: #a0607a; --lcd-glow: rgba(255,183,201,.6);
+  --pl-bg: #22121b; --pl-fg: #ffe3ea; --pl-dim: #c98aa0; --pl-sel: #8f3456; --pl-cur: #ffb7c9;
+  --ink: #4a2533; --ink-dim: #8a5a6c; --accent: #e0577f;
+  --btn-hi: #fff; --btn-a: #fff0f4; --btn-b: #e9b4c4; --btn-fg: #7a3f52;
+  --on-a: #ffa3bb; --on-b: #e0577f; --on-fg: #fff; --led: #ff7aa2;
+  --track-a: #7a3f52; --track-b: #f7d6df; --vtrack-a: #1e1118; --vtrack-b: #6a3346; --thumb-edge: #7a3f52;
+}
+/* Sunset: в тон фоновому фото — персик, коралл и вечерний фиолетовый */
+[data-skin="sunset"] {
+  --font-lcd: "Space Mono", monospace; --lcd-k: .88;
+  --frame-hi: #ffd9ae; --frame: #eaa071; --frame-lo: #b8644c; --frame-edge: #4a2030;
+  --title-a: #6b2d5c; --title-b: #2e1437; --title-fg: #ffd7a8;
+  --lcd-a: #1c0b24; --lcd-b: #3d1739; --lcd-fg: #ffb07a; --lcd-dim: #9a5a7a; --lcd-glow: rgba(255,150,100,.6);
+  --pl-bg: #1f0c26; --pl-fg: #ffe0c8; --pl-dim: #c08aa0; --pl-sel: #9b3d5c; --pl-cur: #ffb07a;
+  --ink: #2e1437; --ink-dim: #5c2d48; --accent: #ff7043;
+  --btn-hi: #fff4e6; --btn-a: #ffd7b0; --btn-b: #d98a62; --btn-fg: #4a2030;
+  --on-a: #ff9a7a; --on-b: #c2185b; --on-fg: #fff; --led: #ffcc80;
+  --track-a: #4a2030; --track-b: #f0b48c; --vtrack-a: #1c0b24; --vtrack-b: #5c2d48; --thumb-edge: #4a2030;
+}
+
+/* Cyberpunk: кислотно-жёлтый корпус, чёрный дисплей с бирюзой и красным */
+[data-skin="cyberpunk"] {
+  --font-lcd: "Chakra Petch", sans-serif; --lcd-k: 1;
+  --frame-hi: #fff86b; --frame: #f3e600; --frame-lo: #b8ad00; --frame-edge: #111;
+  --title-a: #1a1a1a; --title-b: #000; --title-fg: #00f0ff;
+  --lcd-a: #050608; --lcd-b: #12161d; --lcd-fg: #00f0ff; --lcd-dim: #ff003c; --lcd-glow: rgba(0,240,255,.6);
+  --pl-bg: #0a0b0f; --pl-fg: #e8ff6b; --pl-dim: #8a8f3a; --pl-sel: #ff003c; --pl-cur: #00f0ff;
+  --ink: #111; --ink-dim: #3a3700; --accent: #ff003c;
+  --btn-hi: #3a3a3a; --btn-a: #1e1e1e; --btn-b: #050505; --btn-fg: #f3e600;
+  --on-a: #ff4d6d; --on-b: #c4002e; --on-fg: #fff; --led: #00f0ff;
+  --track-a: #000; --track-b: #4a4600; --vtrack-a: #000; --vtrack-b: #2a2a2a; --thumb-edge: #000;
+}
+/* Nokia: тот самый зеленоватый монохромный экран и тёмно-синий корпус телефона из 2000-х */
+[data-skin="nokia"] {
+  --font-lcd: "Silkscreen", monospace; --lcd-k: .8;
+  --frame-hi: #5d6f8f; --frame: #34425e; --frame-lo: #222c40; --frame-edge: #0d121c;
+  --title-a: #4a5a78; --title-b: #1c2436; --title-fg: #c7d6a6;
+  --lcd-a: #93a77b; --lcd-b: #b7c79a; --lcd-fg: #1e2a12; --lcd-dim: #5b6b45; --lcd-glow: rgba(0,0,0,0);
+  --pl-bg: #a9bb8c; --pl-fg: #1e2a12; --pl-dim: #4f5e3b; --pl-sel: #7f9264; --pl-cur: #000;
+  --ink: #e3e9f2; --ink-dim: #a9b6cc; --accent: #c7d6a6;
+  --btn-hi: #eef1f5; --btn-a: #c9d0dc; --btn-b: #8794aa; --btn-fg: #1c2436;
+  --on-a: #c7d6a6; --on-b: #7f9264; --on-fg: #1e2a12; --led: #b8ff6a;
+  --track-a: #0d121c; --track-b: #5d6f8f; --vtrack-a: #0d121c; --vtrack-b: #3d4a66; --thumb-edge: #0d121c;
+}
+
+* { box-sizing: border-box; }
+/* Фон «Chillout Dreams»: закат над водой — небо, солнце на горизонте, отражение. Слой fixed, тянется на весь экран */
+html { min-height: 100%; background: #12081f; }
+body {
+  margin: 0; min-height: 100vh; position: relative; isolation: isolate;
+  background-color: #12081f;
+  font: 11px/1.25 var(--font-ui); color: var(--ink);
+  padding-block: 28px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+/* Фон: фото заката с пальмами (лежит рядом, bg.jpg). Слева лёгкое затемнение под окна плеера */
+.bg {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(18,8,31,.55) 0, rgba(18,8,31,.15) 38%, transparent 60%),
+    url("/soma/bg.jpg") 50% 62% / cover no-repeat,
+    linear-gradient(#3a2a4a, #c97a3c 70%, #2a1a18);
+}
+.credit {
+  position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  font: 10px var(--font-ui); color: rgba(255,240,220,.7); text-shadow: 0 1px 2px #000;
+}
+.credit a { color: inherit; }
+/* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
+.get-app {
+  position: relative; margin-top: 6px; padding: 12px; border-radius: 12px;
+  background: rgba(22,22,28,.82); color: #e8e8ee;
+  border: 1px solid rgba(255,255,255,.12); box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  font: 13px/1.35 var(--font-ui); display: flex; flex-direction: column; gap: 10px; user-select: text;
+}
+/* на широком экране места хватает — карточка снова висит в правом нижнем углу, над подписью к фото */
+@media (min-width: 700px) {
+  .get-app { position: fixed; z-index: 40; width: 220px; margin: 0; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+}
+.ga-title { text-align: center; color: #a9a9b4; }
+.ga-title b { color: #fff; font-weight: normal; }
+.ga-btn {
+  height: 38px; border: 0; border-radius: 10px; cursor: pointer;
+  background: rgba(255,255,255,.12); color: #fff; font: bold 13px var(--font-ui);
+}
+.ga-btn:hover { background: rgba(255,255,255,.2); }
+.ga-x { position: absolute; top: 4px; right: 6px; border: 0; background: none; color: #8d8d98; font: 16px/1 var(--font-ui); cursor: pointer; padding: 2px 4px; }
+.ga-x:hover { color: #fff; }
+.ga-help { margin: 0; font-size: 12px; color: #c9c9d2; }
+.ga-help b { color: #fff; }
+
+.amp { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 3px; user-select: none; }
+
+/* ---- window frame ---- */
+.win {
+  background: var(--win-bg);
+  border: 1px solid var(--frame-edge); border-radius: 7px;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.7), inset -1px -1px 0 rgba(0,0,0,.25), 0 6px 18px rgba(0,0,0,.35);
+  padding: 3px 6px 7px; position: relative;
+}
+.tb {
+  height: 17px; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative;
+  background: linear-gradient(var(--title-a), var(--title-b)); color: var(--title-fg);
+  font: bold 10px var(--font-ui); letter-spacing: .35em; text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+}
+.tb-btns { position: absolute; right: 3px; top: 2px; display: flex; gap: 2px; }
+.tb-btn {
+  width: 13px; height: 12px; border-radius: 2px; border: 1px solid #1b2029; padding: 0; cursor: pointer;
+  background: linear-gradient(var(--btn-hi), var(--btn-b)); color: var(--btn-fg); font: bold 9px/9px var(--font-ui);
+}
+.menubar { display: flex; gap: 2px; padding: 2px 2px 3px; position: relative; }
+.menubar .menu > button {
+  background: none; border: 1px solid transparent; padding: 1px 6px; font: 11px var(--font-ui); color: var(--ink); cursor: pointer; border-radius: 2px;
+}
+.menubar .menu > button:hover, .menubar .menu.open > button { border-color: var(--frame-lo); background: rgba(255,255,255,.35); }
+.menu { position: relative; }
+.menu ul {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 20; min-width: 190px; margin: 0; padding: 2px;
+  list-style: none; background: #f4f5f7; color: #111; border: 1px solid #5d6878; box-shadow: 2px 3px 6px rgba(0,0,0,.35);
+}
+.menu.open ul { display: block; }
+.menu li button, .menu li a {
+  display: flex; justify-content: space-between; gap: 16px; width: 100%; padding: 3px 10px 3px 18px; text-align: left;
+  background: none; border: 0; font: 11px var(--font-ui); color: #111; cursor: pointer; text-decoration: none; position: relative;
+}
+.menu li button:hover, .menu li a:hover { background: #316ac5; color: #fff; }
+.menu li .k { color: #666; } .menu li button:hover .k { color: #dde; }
+.menu li [aria-checked=true]::before { content: "✓"; position: absolute; left: 5px; }
+.menu li.sep { height: 1px; background: #c3c7cf; margin: 2px 0; }
+
+.tb { cursor: default; }
+.tb .tb-title { pointer-events: none; }
+.amp.draggable .tb { cursor: move; touch-action: none; }
+.win.dragging { z-index: 30; box-shadow: inset 1px 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.5); }
+.win { transition: box-shadow .15s; }
+.tb-btns .tb-btn + .tb-btn { margin-left: 1px; }
+.shade-bar { display: none; }
+/* Shade-режим: окно сворачивается в полоску-заголовок */
+.win.shaded { padding-bottom: 3px; }
+.win.shaded > :not(.tb) { display: none !important; }
+#mainWin.shaded .tb { justify-content: flex-start; letter-spacing: 0; padding: 0 40px 0 4px; }
+#mainWin.shaded .tb-title { display: none; }
+#mainWin.shaded .shade-bar { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 1; }
+.shade-bar .mini { width: 16px; height: 12px; padding: 0; border: 1px solid #1b2029; border-radius: 2px; background: linear-gradient(var(--btn-hi), var(--btn-b)); color: var(--btn-fg); font: 7px/10px var(--font-ui); cursor: pointer; }
+.sh-time { font: calc(12px * var(--lcd-k))/12px var(--font-lcd); color: var(--lcd-fg); background: var(--lcd-a); padding: 0 4px; margin-left: 4px; border-radius: 2px; font-variant-numeric: tabular-nums; }
+.sh-text { font: calc(11px * var(--lcd-k))/12px var(--font-lcd); color: var(--lcd-fg); text-transform: uppercase; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; flex: 1; padding-left: 4px; }
+
+/* ---- main display ---- */
+.disp { display: grid; grid-template-columns: 1fr 22px; gap: 4px; }
+.lcd {
+  background: linear-gradient(170deg, var(--lcd-b), var(--lcd-a) 60%);
+  border: 1px solid var(--frame-edge); border-radius: 5px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.6);
+  color: var(--lcd-fg); font-family: var(--font-lcd); padding: 5px 8px 4px; min-width: 0;
+  text-shadow: 0 0 5px var(--lcd-glow);
+}
+.lcd-top { display: grid; grid-template-columns: auto auto 1fr 96px; gap: 10px; align-items: start; }
+.time-wrap { display: flex; align-items: flex-start; gap: 3px; }
+.state-ic { width: 8px; height: 9px; margin-top: 7px; }
+.time { font-size: calc(31px * var(--lcd-k)); line-height: 30px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.meta { display: grid; grid-template-columns: auto auto; gap: 2px 6px; font-size: calc(14px * var(--lcd-k)); line-height: 18px; margin-top: 1px; align-items: center; }
+.meta .lbl { color: var(--lcd-dim); font-size: calc(11px * var(--lcd-k)); letter-spacing: .04em; }
+.meta .box { border: 1px solid var(--lcd-dim); padding: 0 4px; min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+.meta .on { color: var(--lcd-fg); } .meta .off { color: var(--lcd-dim); }
+canvas#viz { width: 96px; height: 30px; display: block; cursor: pointer; }
+.marquee { margin-top: 4px; height: 20px; overflow: hidden; white-space: nowrap; font-size: calc(16px * var(--lcd-k)); line-height: 20px; text-transform: uppercase; letter-spacing: .04em; }
+.marquee span { display: inline-block; padding-left: 100%; animation: scroll 18s linear infinite; }
+.marquee.static span { padding-left: 0; animation: none; }
+@keyframes scroll { to { transform: translateX(-100%); } }
+.side { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.pill {
+  width: 22px; height: 18px; border-radius: 9px; border: 1px solid var(--frame-edge); cursor: pointer; padding: 0;
+  background: linear-gradient(var(--btn-hi), var(--btn-b)); color: var(--btn-fg); font: bold 8px var(--font-ui);
+  box-shadow: inset 0 1px 0 var(--btn-hi);
+}
+.pill[aria-pressed=true] { background: linear-gradient(var(--on-a), var(--on-b)); color: var(--on-fg); }
+.vis-lbl { font: bold 6px var(--font-ui); color: var(--ink-dim); letter-spacing: .05em; text-align: center; line-height: 7px; }
+
+.row2 { display: flex; gap: 4px; align-items: center; margin-top: 5px; }
+.seek {
+  flex: 1; height: 9px; border-radius: 5px; border: 1px solid var(--frame-edge); position: relative; overflow: hidden;
+  background: linear-gradient(#7b8596, #c9d0da); box-shadow: inset 0 1px 2px rgba(0,0,0,.4);
+}
+.seek i { position: absolute; inset: 0; width: 0; background: linear-gradient(#bfe0ff, #4f7fd0); transition: width .4s; }
+.seek b { position: absolute; inset: 0; display: grid; place-items: center; font: bold 7px var(--font-ui); letter-spacing: .2em; color: #fff; text-shadow: 0 0 2px #000; }
+.oval {
+  height: 18px; padding: 0 9px; border-radius: 9px; border: 1px solid var(--frame-edge); cursor: pointer;
+  background: linear-gradient(var(--btn-hi), var(--btn-b)); color: var(--btn-fg); font: bold 9px var(--font-ui); box-shadow: inset 0 1px 0 var(--btn-hi);
+}
+.oval[aria-pressed=true] { background: linear-gradient(var(--on-a), var(--on-b)); color: var(--on-fg); }
+
+.transport { display: flex; align-items: center; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
+.rb {
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--frame-edge); cursor: pointer; padding: 0;
+  display: grid; place-items: center; color: var(--btn-fg);
+  background: radial-gradient(circle at 35% 30%, var(--btn-hi) 0, var(--btn-a) 35%, var(--btn-b) 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.35), inset 0 -2px 3px rgba(0,0,0,.12);
+}
+.rb:active, .rb[aria-pressed=true] { background: radial-gradient(circle at 50% 60%, var(--btn-a) 0, var(--btn-b) 60%, var(--frame-lo) 100%); box-shadow: inset 0 2px 3px rgba(0,0,0,.35); }
+.rb.big { width: 34px; height: 34px; }
+.rb svg { width: 12px; height: 12px; fill: currentColor; }
+.vol { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 120px; margin-left: 8px; }
+.spk { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--frame-edge); background: radial-gradient(circle at 35% 30%, var(--btn-hi), var(--btn-b)); display: grid; place-items: center; cursor: pointer; padding: 0; color: var(--btn-fg); }
+.spk svg { width: 11px; height: 11px; fill: currentColor; }
+.spk[aria-pressed=true] { color: #c0392b; }
+.config { font: bold 8px var(--font-ui); color: var(--ink-dim); letter-spacing: .08em; padding: 0 4px; cursor: pointer; background: none; border: 0; }
+.logo { width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; }
+.logo svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+.logo:hover svg { filter: drop-shadow(0 0 4px rgba(255,230,190,.9)); }
+
+input[type=range].h {
+  -webkit-appearance: none; appearance: none; flex: 1; height: 7px; border-radius: 4px;
+  border: 1px solid var(--frame-edge); background: linear-gradient(var(--track-a), var(--track-b)); box-shadow: inset 0 1px 2px rgba(0,0,0,.4);
+}
+input[type=range].h::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 11px; border-radius: 5px; border: 1px solid var(--thumb-edge); background: linear-gradient(var(--btn-hi), var(--btn-b)); }
+input[type=range].h::-moz-range-thumb { width: 22px; height: 11px; border-radius: 5px; border: 1px solid var(--thumb-edge); background: linear-gradient(var(--btn-hi), var(--btn-b)); }
+
+/* ---- equalizer window ---- */
+.eq-body { display: grid; grid-template-columns: 108px 1fr; gap: 6px; margin-top: 4px; }
+.eq-left { display: flex; flex-direction: column; gap: 6px; padding: 4px; border-radius: 5px; background: rgba(255,255,255,.25); border: 1px solid var(--frame-lo); }
+.eq-left .lab { font: bold 7px var(--font-ui); letter-spacing: .1em; color: var(--ink-dim); display: flex; justify-content: space-between; }
+.eq-btns { display: flex; flex-direction: column; gap: 3px; }
+.eq-btns .oval { width: 100%; text-align: left; white-space: nowrap; }
+.led { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #6b7487; margin-right: 5px; vertical-align: 0; box-shadow: inset 0 1px 1px rgba(0,0,0,.5); }
+[aria-pressed=true] .led { background: var(--led); box-shadow: 0 0 4px var(--led); }
+.eq-panel { border-radius: 5px; border: 1px solid var(--frame-edge); background: linear-gradient(var(--frame-lo), var(--frame)); box-shadow: inset 0 1px 3px rgba(0,0,0,.35); padding: 4px 4px 2px; min-width: 0; }
+.bands { display: grid; grid-template-columns: 26px repeat(11, minmax(0, 1fr)); align-items: start; }
+.scale { height: 90px; display: flex; flex-direction: column; justify-content: space-between; font: 7px var(--font-ui); color: #fff; text-shadow: 0 0 2px #000; text-align: right; padding-right: 2px; }
+.band { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+.band.pre { margin-right: 6px; border-right: 1px solid rgba(0,0,0,.25); }
+.band label { font: 7px var(--font-ui); color: #fff; text-shadow: 0 0 2px #000; white-space: nowrap; }
+input[type=range].v {
+  /* фиксированная высота: иначе Firefox берёт «родную» высоту вертикального слайдера и он вылезает за панель */
+  writing-mode: vertical-lr; direction: rtl; appearance: none; -webkit-appearance: none;
+  width: 8px; height: 90px; flex: none; margin: 0; padding: 0; border-radius: 4px; border: 1px solid #222b38;
+  background: linear-gradient(90deg, var(--vtrack-a), var(--vtrack-b)); cursor: pointer;
+}
+input[type=range].v::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 9px; border-radius: 3px; border: 1px solid var(--thumb-edge); background: linear-gradient(var(--btn-hi), var(--btn-b)); }
+input[type=range].v::-moz-range-thumb { width: 16px; height: 9px; border-radius: 3px; border: 1px solid var(--thumb-edge); background: linear-gradient(var(--btn-hi), var(--btn-b)); }
+.tabs { display: flex; gap: 2px; margin-top: 5px; justify-content: center; }
+.tab {
+  padding: 2px 12px 3px; border: 1px solid var(--frame-edge); border-top: 0; border-radius: 0 0 6px 6px; cursor: pointer;
+  background: linear-gradient(var(--frame-lo), var(--frame)); color: var(--ink-dim); font: bold 8px var(--font-ui); letter-spacing: .12em;
+}
+.tab[aria-selected=true] { background: linear-gradient(var(--frame-hi), var(--frame)); color: var(--ink); }
+.tabpane { min-height: 132px; }
+.info { display: grid; grid-template-columns: 76px 1fr; gap: 8px; padding: 4px; }
+.info img { width: 76px; height: 76px; border-radius: 4px; border: 1px solid var(--frame-edge); background: var(--lcd-a); }
+.info h3 { margin: 0 0 3px; font: bold 11px var(--font-ui); }
+.info p { margin: 0; font-size: 11px; color: var(--ink-dim); min-width: 0; }
+.recent { grid-column: 1 / -1; margin: 0; padding: 4px 6px; list-style: none; border-radius: 4px; background: var(--pl-bg); color: var(--pl-fg); font: 11px/1.45 var(--font-ui); }
+.recent li { display: grid; grid-template-columns: 40px 1fr; gap: 6px; }
+.recent li span:first-child { color: var(--pl-dim); font-variant-numeric: tabular-nums; }
+.recent li span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.keys { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 3px 8px; padding: 6px; font-size: 11px; }
+.keys kbd { font: bold 10px var(--font-ui); background: linear-gradient(#fff, #c4cbd6); border: 1px solid var(--frame-edge); border-radius: 3px; padding: 0 4px; text-align: center; color: #1d2430; }
+.skins { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 6px; }
+.skin-btn { border: 1px solid var(--frame-edge); border-radius: 5px; padding: 4px; cursor: pointer; background: rgba(255,255,255,.3); font: 10px var(--font-ui); color: var(--ink); display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.skin-btn[aria-pressed=true] { outline: 2px solid var(--accent); }
+.skin-btn i {
+  width: 100%; height: 30px; border-radius: 3px; display: block; position: relative; border: 1px solid var(--frame-edge);
+  background: linear-gradient(var(--title-a), var(--title-b)) top / 100% 7px no-repeat, var(--win-bg);
+}
+/* мини-дисплей внутри превью: цвет фона и «светящиеся» буквы как у настоящего */
+.skin-btn i::after {
+  content: "01:23"; position: absolute; left: 4px; right: 4px; top: 10px; bottom: 4px; border-radius: 2px;
+  background: linear-gradient(170deg, var(--lcd-b), var(--lcd-a)); color: var(--lcd-fg); text-shadow: 0 0 4px var(--lcd-glow);
+  font: calc(11px * var(--lcd-k))/14px var(--font-lcd); padding-left: 3px; text-align: left;
+}
+.skin-btn i::before {
+  content: ""; position: absolute; right: 8px; top: 13px; width: 12px; height: 9px; z-index: 1; border-radius: 4px;
+  background: linear-gradient(var(--on-a), var(--on-b));
+}
+
+.likes { margin: 4px; padding: 2px 0; list-style: none; max-height: 150px; overflow-y: auto; border-radius: 4px; background: var(--pl-bg); color: var(--pl-fg); }
+.likes li { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 3px 6px; align-items: center; border-bottom: 1px solid rgba(255,255,255,.06); }
+.likes .tr { min-width: 0; font-size: 11px; }
+.likes .tr b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+.likes .tr small { color: var(--pl-dim); }
+.likes .go { display: flex; gap: 3px; }
+.likes .go a, .likes .go button {
+  font: bold 9px var(--font-ui); padding: 1px 5px; border-radius: 7px; border: 1px solid var(--pl-dim);
+  color: var(--pl-fg); text-decoration: none; background: transparent; cursor: pointer;
+}
+.likes .go a:hover, .likes .go button:hover { background: var(--pl-sel); }
+.likes .empty { display: block; color: var(--pl-dim); padding: 10px 6px; border: 0; }
+.likes-foot { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; font-size: 10px; color: var(--ink-dim); }
+#likeBtn { width: 34px; padding: 0; display: grid; place-items: center; }
+#likeBtn svg { width: 12px; height: 11px; fill: currentColor; }
+#likeBtn:disabled { opacity: .45; cursor: default; }
+#likeBtn[aria-pressed=true] { color: #ff5a7a; background: linear-gradient(#fff, #f3c3cf); }
+
+/* ---- playlist ---- */
+.pl-list {
+  margin-top: 2px; height: 220px; overflow-y: auto; border: 1px solid var(--frame-edge); border-radius: 4px;
+  background: var(--pl-bg); color: var(--pl-fg); box-shadow: inset 0 2px 4px rgba(0,0,0,.5); padding: 2px 0;
+}
+.pl-list::-webkit-scrollbar { width: 12px; } .pl-list::-webkit-scrollbar-thumb { background: linear-gradient(90deg, var(--btn-hi), var(--btn-b)); border-radius: 6px; border: 2px solid var(--pl-bg); }
+.pl-row { display: grid; grid-template-columns: 1fr auto 16px; gap: 6px; padding: 1px 6px; cursor: pointer; font: 12px/1.45 var(--font-ui); align-items: center; }
+.pl-row:hover { background: rgba(255,255,255,.08); }
+.pl-row.sel { background: var(--pl-sel); }
+.pl-row.cur .t { color: var(--pl-cur); font-weight: bold; }
+.pl-row .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-row .g { color: var(--pl-dim); font-size: 11px; font-variant-numeric: tabular-nums; }
+.pl-row .s { background: none; border: 0; padding: 0; color: var(--pl-dim); cursor: pointer; font-size: 12px; }
+.pl-row .s.on { color: #ffd34d; }
+.pl-empty { padding: 8px; color: var(--pl-dim); }
+.pl-bottom { display: flex; gap: 3px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
+.pl-bottom .oval { padding: 0 7px; }
+.pl-bottom input[type=search] {
+  flex: 1; min-width: 90px; height: 18px; border-radius: 9px; border: 1px solid var(--frame-edge); padding: 0 8px;
+  font: 11px var(--font-ui); background: #fff; color: #111;
+}
+.mini-lcd { height: 18px; padding: 0 6px; border-radius: 4px; border: 1px solid var(--frame-edge); background: var(--lcd-a); color: var(--lcd-fg); font: calc(12px * var(--lcd-k))/16px var(--font-lcd); font-variant-numeric: tabular-nums; }
+.pl-foot { margin-top: 4px; font-size: 10px; color: var(--ink-dim); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pl-foot a { color: var(--ink-dim); }
+
+button:focus-visible, input:focus-visible, .pl-row:focus-visible { outline: 1px dotted var(--accent); outline-offset: 1px; }
+[hidden] { display: none !important; }
+
+@media (min-width: 1000px) { .amp { margin-left: max(24px, 6vw); } }
+.tabs { flex-wrap: wrap; }
+body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
+/* Телефон и планшет: палец толще курсора — увеличиваем всё, во что тыкают */
+@media (pointer: coarse) {
+  .pill { width: 30px; height: 26px; border-radius: 13px; font-size: 10px; }
+  .side { gap: 6px; }
+  .oval { height: 28px; padding: 0 12px; font-size: 11px; border-radius: 14px; }
+  .rb { width: 40px; height: 40px; } .rb.big { width: 46px; height: 46px; }
+  .rb svg { width: 15px; height: 15px; }
+  .spk { width: 30px; height: 30px; }
+  input[type=range].h { height: 12px; }
+  input[type=range].h::-webkit-slider-thumb { width: 28px; height: 20px; }
+  input[type=range].h::-moz-range-thumb { width: 28px; height: 20px; }
+  .menubar .menu > button { padding: 5px 9px; font-size: 13px; }
+  .menu li button, .menu li a { padding: 9px 12px 9px 22px; font-size: 13px; }
+  .tab { padding: 6px 12px; font-size: 9px; }
+  .pl-row { padding: 7px 8px; font-size: 14px; }
+  .pl-row .s { font-size: 18px; padding: 0 2px; }
+  .pl-bottom input[type=search] { height: 28px; font-size: 14px; border-radius: 14px; }
+  #likeBtn { width: 52px; } #likeBtn svg { width: 18px; height: 16px; }
+  .likes .go a, .likes .go button { padding: 5px 8px; font-size: 11px; }
+  .hint, .keys { display: none; }
+}
+@media (max-width: 440px) {
+  .menubar { flex-wrap: wrap; }
+  .transport { justify-content: space-between; }
+  .vol { flex-basis: 100%; margin-left: 0; order: 9; }
+  .config { display: none; }
+  .pl-list { height: 50vh; }
+  .credit { left: 0; right: 0; text-align: center; }
+  .lcd-top { grid-template-columns: auto auto 1fr; } canvas#viz { grid-column: 1 / -1; width: 100%; }
+  .eq-body { grid-template-columns: 1fr; }
+  .eq-left { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .eq-left > div:first-child { flex-basis: 100%; }
+  .eq-btns { flex-basis: 100%; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .eq-btns .oval { text-align: center; padding: 0 6px; }
+  .skins { grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; }
+  .skin-btn { font-size: 9px; padding: 3px; }
+}
+@media (prefers-reduced-motion: reduce) { .marquee span { animation: none; padding-left: 0; } }
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<div class="credit">Фото: <a href="https://commons.wikimedia.org/wiki/File:DSC_8261_Golden_sunset_over_the_ocean_framed_by_silhouetted_palm_trees_and_a_lone_sailboat_on_the_horizon.jpg" target="_blank" rel="noopener">PattayaPatrol</a>, CC BY-SA 4.0</div>
+<div class="amp" id="amp" data-skin="silver">
+
+  <!-- ============ MAIN ============ -->
+  <section class="win" id="mainWin" aria-label="Плеер">
+    <div class="tb" data-win="main"><span class="tb-title">Soma Amp</span>
+      <span class="shade-bar">
+        <button class="mini" data-act="prev" title="Предыдущий канал">⏮</button><button class="mini" data-act="play" title="Играть">▶</button><button class="mini" data-act="pause" title="Пауза">⏸</button><button class="mini" data-act="stop" title="Стоп">⏹</button><button class="mini" data-act="next" title="Следующий канал">⏭</button>
+        <span class="sh-time" id="shadeTime">00:00</span><span class="sh-text" id="shadeText"></span>
+      </span>
+      <span class="tb-btns"><button class="tb-btn" id="shade" title="Свернуть эквалайзер и плейлист">_</button><button class="tb-btn" data-shade="main" title="Shade-режим (двойной клик по заголовку)">▭</button></span></div>
+    <nav class="menubar" id="menubar">
+      <div class="menu"><button>File</button><ul>
+        <li><button data-act="copylink">Скопировать ссылку на канал</button></li>
+        <li id="installItem" hidden><button data-act="install">Установить как приложение</button></li>
+        <li class="sep"></li>
+        <li><a href="https://somafm.com/" target="_blank" rel="noopener">Открыть SomaFM.com</a></li>
+        <li><a href="https://somafm.com/support/" target="_blank" rel="noopener">Поддержать SomaFM</a></li>
+      </ul></div>
+      <div class="menu"><button>Play</button><ul>
+        <li><button data-act="play">Играть <span class="k">X</span></button></li>
+        <li><button data-act="pause">Пауза <span class="k">C</span></button></li>
+        <li><button data-act="stop">Стоп <span class="k">V</span></button></li>
+        <li class="sep"></li>
+        <li><button data-act="prev">Предыдущий канал <span class="k">Z</span></button></li>
+        <li><button data-act="next">Следующий канал <span class="k">B</span></button></li>
+        <li><button data-act="random">Случайный канал <span class="k">S</span></button></li>
+      </ul></div>
+      <div class="menu"><button>Options</button><ul>
+        <li><button data-act="eqon" id="mEqOn">Эквалайзер включён</button></li>
+        <li><button data-act="eqauto" id="mEqAuto">Свой EQ для каждого канала (AUTO)</button></li>
+        <li class="sep"></li>
+        <li><button data-act="vis:bars" data-vis="bars">Спектр</button></li>
+        <li><button data-act="vis:scope" data-vis="scope">Осциллограф</button></li>
+        <li><button data-act="vis:off" data-vis="off">Без визуализации</button></li>
+        <li class="sep"></li>
+        <li><button data-act="timer">Время: прошло / текущее</button></li>
+        <li class="sep"></li>
+        <li><button data-act="hq" id="mHq">Максимальное качество (до 320 kbps)</button></li>
+        <li class="sep"></li>
+        <li><button data-act="sleep:0" data-sleep="0">Таймер сна: выкл <span class="k">T</span></button></li>
+        <li><button data-act="sleep:15" data-sleep="15">Таймер сна: 15 мин</button></li>
+        <li><button data-act="sleep:30" data-sleep="30">Таймер сна: 30 мин</button></li>
+        <li><button data-act="sleep:60" data-sleep="60">Таймер сна: 60 мин</button></li>
+        <li><button data-act="sleep:90" data-sleep="90">Таймер сна: 90 мин</button></li>
+      </ul></div>
+      <div class="menu"><button>View</button><ul>
+        <li><button data-act="toggle:eq" id="mViewEq">Эквалайзер <span class="k">Alt+G</span></button></li>
+        <li><button data-act="toggle:pl" id="mViewPl">Плейлист <span class="k">Alt+E</span></button></li>
+        <li class="sep"></li>
+        <li><button data-act="tab:themes">Цветовые темы…</button></li>
+        <li class="sep"></li>
+        <li><button data-act="dock">Собрать окна вместе</button></li>
+      </ul></div>
+      <div class="menu"><button>Help</button><ul>
+        <li><button data-act="tab:options">Горячие клавиши и о канале</button></li>
+      </ul></div>
+    </nav>
+
+    <div class="disp">
+      <div class="lcd">
+        <div class="lcd-top">
+          <div class="time-wrap">
+            <svg class="state-ic" id="stateIc" viewBox="0 0 8 9"><rect width="7" height="7" y="1" fill="currentColor"/></svg>
+            <div class="time" id="time" title="Переключить: прошло / текущее время">00:00</div>
+          </div>
+          <div class="meta">
+            <span class="lbl">KBPS</span><span class="box" id="kbps">—</span>
+            <span class="lbl">KHZ</span><span class="box" id="khz">—</span>
+            <span class="lbl">EQ</span><span id="eqInd" class="off">●</span>
+            <span class="lbl" id="sleepLbl" hidden>SLP</span><span class="box" id="sleepBox" hidden></span>
+          </div>
+          <span></span>
+          <canvas id="viz" width="192" height="60" title="Клик — сменить визуализацию"></canvas>
+        </div>
+        <div class="marquee" id="marquee"><span id="marqueeText">Soma Amp — выбери канал</span></div>
+      </div>
+      <div class="side">
+        <span class="vis-lbl">VIDEO<br>VIS</span>
+        <button class="pill" id="visBtn" title="Сменить визуализацию">▾</button>
+        <button class="pill" id="randBtn" title="Случайный канал (S)">⤮</button>
+        <button class="pill" id="timeBtn" title="Прошло / текущее время">123</button>
+        <button class="pill" id="sleepBtn" title="Таймер сна: выкл → 15 → 30 → 60 → 90 мин" aria-pressed="false">Zz</button>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="seek" title="Прямой эфир — перемотки нет"><i id="seekFill"></i><b id="seekLbl">LIVE</b></div>
+      <button class="oval" id="likeBtn" aria-pressed="false" title="Лайк текущему треку (L)" aria-label="Лайк"><svg viewBox="0 0 16 14" aria-hidden="true"><path d="M8 13.5 1.6 7.3A3.9 3.9 0 0 1 8 2.6a3.9 3.9 0 0 1 6.4 4.7z"/></svg></button>
+      <button class="oval" id="plBtn" aria-pressed="true" title="Плейлист">PL</button>
+      <button class="oval" id="eqBtn" aria-pressed="true" title="Эквалайзер">EQ</button>
+    </div>
+
+    <div class="transport">
+      <button class="rb" id="prev" title="Предыдущий канал (Z)"><svg viewBox="0 0 12 12"><path d="M1 1h2v10H1zM3 6l4-5v10zM7 6l4-5v10z"/></svg></button>
+      <button class="rb big" id="play" title="Играть (X)"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg></button>
+      <button class="rb" id="pause" title="Пауза (C)"><svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg></button>
+      <button class="rb" id="stop" title="Стоп (V)"><svg viewBox="0 0 12 12"><path d="M2 2h8v8H2z"/></svg></button>
+      <button class="rb" id="next" title="Следующий канал (B)"><svg viewBox="0 0 12 12"><path d="M9 1h2v10H9zM9 6L5 1v10zM5 6L1 1v10z"/></svg></button>
+      <div class="vol">
+        <button class="spk" id="mute" aria-pressed="false" title="Без звука (M)"><svg viewBox="0 0 12 12"><path d="M1 4h3l4-3v10L4 8H1z"/></svg></button>
+        <input type="range" class="h" id="volume" min="0" max="100" value="80" aria-label="Громкость">
+      </div>
+      <button class="config" data-act="tab:options">CONFIG</button>
+      <!-- значок Soma Amp: закатное солнце над водой (тот же мотив, что на иконке приложения) -->
+      <button class="logo" data-act="tab:options" title="Soma Amp — о канале и горячие клавиши">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f6573"/><stop offset=".6" stop-color="#a99c9c"/><stop offset="1" stop-color="#ecc9a3"/></linearGradient>
+            <linearGradient id="lgSun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbf2"/><stop offset="1" stop-color="#f4d3a4"/></linearGradient>
+            <clipPath id="lgClip"><circle cx="12" cy="12" r="11"/></clipPath>
+          </defs>
+          <g clip-path="url(#lgClip)">
+            <rect width="24" height="15" fill="url(#lgSky)"/>
+            <rect y="15" width="24" height="9" fill="#3b3f48"/>
+            <path d="M6.5 15a5.5 5.5 0 0 1 11 0z" fill="url(#lgSun)"/>
+            <path d="M9 16.6h6M10 18.4h4M11 20.2h2" stroke="#f3dcb5" stroke-width="1" stroke-linecap="round"/>
+          </g>
+          <circle cx="12" cy="12" r="11" fill="none" stroke="#3a4454" stroke-width="1.2"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ EQUALIZER / OPTIONS / THEMES ============ -->
+  <section class="win" id="eqWin" aria-label="Эквалайзер">
+    <div class="tb" data-win="eq"><span class="tb-title">Equalizer</span><span class="tb-btns"><button class="tb-btn" data-shade="eq" title="Shade-режим (двойной клик по заголовку)">▭</button></span></div>
+    <div class="tabpane" id="pane-eq">
+      <div class="eq-body">
+        <div class="eq-left">
+          <div><div class="lab"><span>L</span><span>BALANCE</span><span>R</span></div>
+            <input type="range" class="h" id="balance" min="-100" max="100" value="0" aria-label="Баланс" style="width:100%"></div>
+          <div class="eq-btns">
+            <button class="oval" id="eqOn" aria-pressed="true"><span class="led"></span>ON</button>
+            <button class="oval" id="eqReset"><span class="led"></span>FLAT</button>
+            <button class="oval" id="eqAuto" aria-pressed="false" title="Свой эквалайзер для каждого канала"><span class="led"></span>AUTO</button>
+            <div class="menu" id="presetMenu"><button class="oval"><span class="led"></span>PRESETS</button><ul id="presetList"></ul></div>
+          </div>
+        </div>
+        <div class="eq-panel">
+          <div class="bands" id="bands">
+            <div class="scale"><span>+12 db</span><span>+0 db</span><span>-12 db</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pl-foot" id="eqNote" hidden>Эквалайзер недоступен: сервер не разрешил обработку звука, играет без него.</div>
+    </div>
+    <div class="tabpane" id="pane-options" hidden>
+      <div class="info" id="info">
+        <img id="infoImg" alt="">
+        <div><h3 id="infoTitle">—</h3><p id="infoDesc">Выбери канал в плейлисте.</p></div>
+        <ul class="recent" id="recent" hidden></ul>
+      </div>
+      <div class="keys">
+        <kbd>Z</kbd><span>пред. канал</span><kbd>B</kbd><span>след. канал</span>
+        <kbd>X</kbd><span>играть</span><kbd>C</kbd><span>пауза</span>
+        <kbd>V</kbd><span>стоп</span><kbd>S</kbd><span>случайный</span>
+        <kbd>↑ ↓</kbd><span>громкость</span><kbd>M</kbd><span>без звука</span>
+        <kbd>L</kbd><span>лайк треку</span><kbd>T</kbd><span>таймер сна</span>
+        <kbd>Alt+G</kbd><span>эквалайзер</span><kbd>Alt+E</kbd><span>плейлист</span>
+      </div>
+    </div>
+    <div class="tabpane" id="pane-themes" hidden>
+      <div class="skins" id="skins"></div>
+    </div>
+    <div class="tabpane" id="pane-likes" hidden>
+      <ul class="likes" id="likes"></ul>
+      <div class="likes-foot">
+        <span id="likesCount">0 треков</span>
+        <button class="oval" id="likesCopy">Скопировать список</button>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="eq" aria-selected="true">EQUALIZER</button>
+      <button class="tab" role="tab" data-tab="options" aria-selected="false">OPTIONS</button>
+      <button class="tab" role="tab" data-tab="themes" aria-selected="false">COLOR THEMES</button>
+      <button class="tab" role="tab" data-tab="likes" aria-selected="false">LIKES</button>
+    </div>
+  </section>
+
+  <!-- ============ PLAYLIST ============ -->
+  <section class="win" id="plWin" aria-label="Плейлист">
+    <div class="tb" data-win="pl"><span class="tb-title">Playlist Editor</span><span class="tb-btns"><button class="tb-btn" data-shade="pl" title="Shade-режим (двойной клик по заголовку)">▭</button></span></div>
+    <nav class="menubar">
+      <div class="menu"><button>Playlist</button><ul>
+        <li><button data-act="list:chill" data-list="chill">Chill-подборка</button></li>
+        <li><button data-act="list:fav" data-list="fav">Избранное ★</button></li>
+        <li><button data-act="list:all" data-list="all">Все каналы SomaFM</button></li>
+      </ul></div>
+      <div class="menu"><button>Sort</button><ul>
+        <li><button data-act="sort:none" data-sort="none">Как в подборке</button></li>
+        <li><button data-act="sort:title" data-sort="title">По названию</button></li>
+        <li><button data-act="sort:listeners" data-sort="listeners">По слушателям</button></li>
+        <li><button data-act="sort:genre" data-sort="genre">По жанру</button></li>
+      </ul></div>
+      <div class="menu"><button>Help</button><ul>
+        <li><button data-act="tab:options">Двойной клик / Enter — играть, ☆ — в избранное</button></li>
+      </ul></div>
+    </nav>
+    <div class="pl-list" id="list" role="listbox" aria-label="Каналы"></div>
+    <div class="pl-bottom">
+      <button class="oval" id="favAdd" title="Добавить текущий канал в избранное">+Fav</button>
+      <button class="oval" id="favRem" title="Убрать текущий канал из избранного">−Fav</button>
+      <button class="oval" data-act="list:chill" data-list="chill">Chill</button>
+      <button class="oval" data-act="list:all" data-list="all">All</button>
+      <input type="search" id="filter" placeholder="поиск…" autocomplete="off" aria-label="Поиск канала">
+      <span class="mini-lcd" id="plCount">0/0</span>
+    </div>
+    <div class="pl-foot"><span id="status">загрузка каналов…</span><a href="https://somafm.com/support/" target="_blank" rel="noopener">SomaFM живёт на донатах</a></div>
+  </section>
+
+  <aside class="get-app" id="getApp" hidden aria-label="Установить плеер">
+    <button class="ga-x" id="gaClose" title="Скрыть" aria-label="Скрыть">×</button>
+    <div class="ga-title">Soma Amp на <b id="gaOs">компьютер</b></div>
+    <button class="ga-btn" id="gaBtn">Установить</button>
+    <p class="ga-help" id="gaHelp" hidden></p>
+  </aside>
+</div>
+
+<script>
+// ---------- данные ----------
+const CHILL = ['deepspaceone','groovesalad','gsclassic','groovesalad2','dronezone','dz2','lush','spacestation',
+  'synphaera','missioncontrol','fluid','thetrip','beatblender','illstreet','secretagent','bossa','vaporwaves','chillits','darkzone','n5md'];
+const FALLBACK = [
+  ['deepspaceone','Deep Space One','ambient'], ['groovesalad','Groove Salad','ambient|electronic'],
+  ['dronezone','Drone Zone','ambient'], ['lush','Lush','electronic'], ['spacestation','Space Station Soma','electronic'],
+  ['fluid','Fluid','electronic|hiphop'], ['beatblender','Beat Blender','electronic'], ['thetrip','The Trip','electronic'],
+  ['synphaera','Synphaera Radio','ambient|electronic'], ['illstreet','Illinois Street Lounge','lounge'],
+].map(([id, title, genre]) => ({ id, title, genre, listeners: '', description: '' }));
+const SERVERS = ['ice1', 'ice2', 'ice4', 'ice6'];
+const FREQS = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
+const FLABELS = ['60', '170', '310', '600', '1K', '3K', '6K', '12K', '14K', '16K'];
+const PRESETS = {
+  'Flat':        [0,0,0,0,0,0,0,0,0,0],
+  'Chill':       [3,2,1,0,-1,-1,0,1,2,2],
+  'Full Bass':   [8,8,7,4,1,-2,-4,-5,-5,-5],
+  'Bass & Treble':[6,5,2,-2,-3,-1,3,6,7,7],
+  'Full Treble': [-7,-7,-6,-2,2,6,9,10,10,10],
+  'Dance':       [7,5,2,0,0,-4,-5,-5,0,0],
+  'Club':        [0,0,3,5,5,5,3,0,0,0],
+  'Live':        [-4,0,3,4,4,4,3,2,2,2],
+  'Soft':        [3,1,0,-2,-1,2,5,6,7,8],
+  'Headphones':  [4,8,4,-3,-2,1,4,8,10,11],
+  'Large Hall':  [8,8,4,4,0,-4,-4,-4,0,0],
+  'Laptop':      [4,8,4,-3,-2,1,4,8,10,10],
+};
+const SKINS = {
+  silver: 'Silver', graphite: 'Graphite', classic: 'Classic', mint: 'Mint',
+  lambo: 'Lambo', ubuntu: 'Ubuntu', marshmallow: 'Marshmallow', miami: 'Miami',
+  tokyo: 'Tokyo Night', champagne: 'Champagne', espresso: 'Espresso', arctic: 'Arctic',
+  sakura: 'Sakura', sunset: 'Sunset', cyberpunk: 'Cyberpunk', nokia: 'Nokia',
+};
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('somaamp2.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('somaamp2.' + k, JSON.stringify(v)); } catch {} },
+};
+
+// ---------- состояние ----------
+let channels = [];
+let current = null, selected = null;
+let listMode = store.get('list', 'chill'), sortMode = store.get('sort', 'none');
+let favs = new Set(store.get('favs', ['deepspaceone','groovesalad','fluid','dronezone','lush','spacestation']));
+let eq = store.get('eq', { on: true, pre: 0, bands: PRESETS.Chill.slice(), bal: 0 });
+let visMode = store.get('vis', 'bars'), clockMode = 'elapsed';
+let hq = store.get('hq', true);
+let likes = store.get('likes', []);           // [{artist, title, channel, at}]
+let sleepEnd = 0, sleepMin = 0, fade = 1;      // fade — множитель громкости в последнюю минуту таймера
+const SLEEP_STEPS = [0, 15, 30, 60, 90], FADE_MS = 60000;
+let audio = null, ctx = null, nodes = null, corsOk = true;
+let serverIdx = 0, state = 'stop', startedAt = 0, pausedAt = 0, pollTimer = null;
+
+// ---------- звук: src → preamp → 10 фильтров → баланс → анализатор → колонки ----------
+function buildGraph(el) {
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  const src = ctx.createMediaElementSource(el);
+  const pre = ctx.createGain();
+  const filters = FREQS.map((f, i) => {
+    const b = ctx.createBiquadFilter();
+    b.type = i === 0 ? 'lowshelf' : i === FREQS.length - 1 ? 'highshelf' : 'peaking';
+    b.frequency.value = f; b.Q.value = 1.4;
+    return b;
+  });
+  const pan = ctx.createStereoPanner();
+  // fftSize 2048 → «кирпичик» спектра ~23 Гц: хватает, чтобы различить полосы EQ 60 и 170 Гц
+  const an = ctx.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0.72;
+  an.minDecibels = -90; an.maxDecibels = -25;
+  [src, pre, ...filters, pan, an, ctx.destination].reduce((a, b) => (a.connect(b), b));
+  nodes = { pre, filters, pan, an };
+  applyEq();
+}
+
+function applyEq() {
+  $('eqInd').className = eq.on ? 'on' : 'off';
+  if (!nodes) return;
+  nodes.pre.gain.value = eq.on ? Math.pow(10, eq.pre / 20) : 1;
+  nodes.filters.forEach((f, i) => f.gain.value = eq.on ? eq.bands[i] : 0);
+  nodes.pan.pan.value = eq.bal / 100;
+}
+
+function makeAudio(withCors) {
+  if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); }
+  audio = new Audio();
+  audio.preload = 'none';
+  if (withCors) audio.crossOrigin = 'anonymous';
+  applyVolume();
+  audio.muted = $('mute').getAttribute('aria-pressed') === 'true';
+  audio.addEventListener('playing', () => { if (!startedAt) startedAt = Date.now(); setState('play'); });
+  audio.addEventListener('waiting', () => setState('buff'));
+  audio.addEventListener('error', onAudioError);
+  nodes = null;
+  if (withCors) { try { buildGraph(audio); } catch { nodes = null; } }
+  $('eqNote').hidden = !!nodes;
+}
+
+function onAudioError() {
+  if (state === 'stop' || state === 'pause') return;
+  // сначала 128 вместо высокого битрейта, потом другой сервер SomaFM, потом — без обработки звука (EQ и спектр отключатся)
+  if (rate > 128) { rate = 128; startStream(); return; }
+  if (serverIdx < SERVERS.length - 1) { serverIdx++; startStream(); return; }
+  if (corsOk) { corsOk = false; serverIdx = 0; makeAudio(false); startStream(); return; }
+  setState('stop'); setMarquee(`Не удалось подключиться к ${current.title}. Попробуй другой канал.`);
+}
+
+// максимальный MP3-битрейт канала: берём из имени плейлиста (groovesalad256.pls → 256, deepspaceone.pls → 128)
+function maxRate(c) {
+  const pls = (c.playlists || []).find(p => p.format === 'mp3' && p.quality === 'highest');
+  // отрезаем id канала, иначе у dz2 / groovesalad2 цифра из названия примется за битрейт
+  const tail = pls ? pls.url.split('/').pop().replace(/\.pls$/, '') : '';
+  const m = tail.startsWith(c.id) && tail.slice(c.id.length).match(/^(\d{3})$/);
+  return m ? +m[1] : 128;
+}
+let rate = 128;
+
+function startStream() {
+  audio.src = `https://${SERVERS[serverIdx]}.somafm.com/${current.id}-${rate}-mp3`;
+  setState('buff');
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+  audio.play().catch(() => {});
+}
+
+function play(ch) {
+  if (ch && (!current || ch.id !== current.id)) { current = ch; startedAt = 0; }
+  if (!current) current = selected || visible()[0] || channels[0];
+  if (!current) return;
+  if (state === 'pause' && !ch) startedAt += Date.now() - pausedAt; // пауза не считается в «прошло»
+  selected = current;
+  store.set('last', current.id);
+  setHash(current.id);
+  serverIdx = 0; rate = hq ? maxRate(current) : 128;
+  if (!audio || (audio.crossOrigin === 'anonymous') !== corsOk) makeAudio(corsOk);
+  // эфир живой: после паузы просто переподключаемся к текущему моменту
+  startStream();
+  showCurrent(); render();
+}
+
+function pause() {
+  if (state === 'stop') return;
+  if (state === 'pause') { play(); return; }
+  audio.pause(); pausedAt = Date.now(); setState('pause');
+}
+
+function stop() {
+  if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); }
+  startedAt = 0; setState('stop');
+}
+
+function step(dir) {
+  const list = visible();
+  if (!list.length) return;
+  const i = current ? list.findIndex(c => c.id === current.id) : -1;
+  play(list[(i + dir + list.length) % list.length]);
+}
+function random() {
+  const list = visible().filter(c => !current || c.id !== current.id);
+  if (list.length) play(list[Math.floor(Math.random() * list.length)]);
+}
+
+// ---------- интерфейс ----------
+const ICONS = {
+  play: '<path d="M0 0l8 4.5L0 9z" fill="currentColor"/>',
+  pause: '<rect width="3" height="8" y="1" fill="currentColor"/><rect width="3" height="8" x="5" y="1" fill="currentColor"/>',
+  stop: '<rect width="7" height="7" y="1" fill="currentColor"/>',
+  buff: '<circle cx="4" cy="4.5" r="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>',
+};
+function setState(s) {
+  state = s;
+  $('stateIc').innerHTML = ICONS[s];
+  ['play', 'pause', 'stop'].forEach(b => $(b).setAttribute('aria-pressed', String(s === b || (b === 'play' && s === 'buff'))));
+  const on = s === 'play';
+  $('kbps').textContent = on ? String(rate) : '—';
+  $('khz').textContent = on ? '44' : '—';
+  $('seekFill').style.width = on || s === 'buff' ? '100%' : '0';
+  $('seekLbl').textContent = s === 'buff' ? 'CONNECTING…' : s === 'pause' ? 'PAUSED' : 'LIVE';
+  if (s === 'stop') $('time').textContent = '00:00';
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = on ? 'playing' : s === 'pause' ? 'paused' : 'none';
+}
+function setMarquee(text) {
+  $('marqueeText').textContent = text;
+  $('shadeText').textContent = text.replace(/\s+\*{3}.*$/, '');
+  $('marquee').classList.toggle('static', text.length < 30);
+}
+
+function showCurrent() {
+  const c = current;
+  setMarquee(`${c.title}  ***  ${c.lastPlaying || c.genre}  ***`);
+  updateLikeBtn();
+  if (eqAuto) loadEqFor(c);
+  $('infoTitle').textContent = c.title + (c.dj ? ' · DJ ' + c.dj : '');
+  $('infoDesc').textContent = c.description || c.genre;
+  $('infoImg').src = c.largeimage || c.image || '';
+  $('infoImg').alt = c.title;
+  document.title = `${c.title} — Soma Amp`;
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: c.lastPlaying || c.title, artist: c.title, album: 'SomaFM',
+      artwork: c.largeimage ? [{ src: c.largeimage, sizes: '256x256', type: 'image/png' }] : [],
+    });
+  }
+  pollSongs();
+}
+
+async function pollSongs() {
+  clearTimeout(pollTimer);
+  if (!current) return;
+  const id = current.id;
+  try {
+    const { songs } = await (await fetch(`https://api.somafm.com/songs/${id}.json`, { cache: 'no-store' })).json();
+    if (!current || current.id !== id || !songs?.length) throw 0;
+    const now = songs[0];
+    current.lastPlaying = `${now.artist} - ${now.title}`;
+    current.now = { artist: now.artist, title: now.title };
+    updateLikeBtn();
+    setMarquee(`${now.artist} - ${now.title}  ***  ${current.title}  ***`);
+    if ('mediaSession' in navigator && navigator.mediaSession.metadata) {
+      navigator.mediaSession.metadata.title = now.title;
+      navigator.mediaSession.metadata.artist = now.artist;
+    }
+    $('recent').replaceChildren(...songs.slice(0, 5).map(s => {
+      const li = document.createElement('li');
+      li.append(document.createElement('span'), document.createElement('span'));
+      li.children[0].textContent = new Date(s.date * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      li.children[1].textContent = `${s.artist} — ${s.title}`;
+      return li;
+    }));
+    $('recent').hidden = false;
+  } catch {}
+  pollTimer = setTimeout(pollSongs, 30000);
+}
+
+// ---------- лайки ----------
+const sameTrack = (a, b) => a.artist === b.artist && a.title === b.title;
+function updateLikeBtn() {
+  const n = current?.now;
+  $('likeBtn').setAttribute('aria-pressed', String(!!n && likes.some(l => sameTrack(l, n))));
+  $('likeBtn').disabled = !n;
+}
+function toggleLike() {
+  const n = current?.now;
+  if (!n) return;
+  const i = likes.findIndex(l => sameTrack(l, n));
+  if (i >= 0) likes.splice(i, 1);
+  else likes.unshift({ artist: n.artist, title: n.title, channel: current.title, at: Date.now() });
+  store.set('likes', likes); updateLikeBtn(); renderLikes();
+  flash(i >= 0 ? 'Лайк снят' : `♥ ${n.artist} - ${n.title}`);
+}
+function renderLikes() {
+  const box = $('likes');
+  $('likesCount').textContent = `${likes.length} ${plural(likes.length, 'трек', 'трека', 'треков')}`;
+  if (!likes.length) { box.innerHTML = '<li class="empty">Пока пусто. Жми ♥ на главном окне (или L), когда играет то, что нравится.</li>'; return; }
+  box.replaceChildren(...likes.map(l => {
+    const li = document.createElement('li');
+    const q = encodeURIComponent(`${l.artist} ${l.title}`);
+    const tr = document.createElement('div'); tr.className = 'tr';
+    const b = document.createElement('b'); b.textContent = `${l.artist} — ${l.title}`;
+    const s = document.createElement('small');
+    s.textContent = `${l.channel} · ${new Date(l.at).toLocaleDateString('ru-RU')}`;
+    tr.append(b, s);
+    const go = document.createElement('div'); go.className = 'go';
+    [['YT', `https://www.youtube.com/results?search_query=${q}`, 'Найти на YouTube'],
+     ['Я', `https://music.yandex.ru/search?text=${q}`, 'Найти в Яндекс Музыке'],
+     ['SP', `https://open.spotify.com/search/${q}`, 'Найти в Spotify']].forEach(([t, href, title]) => {
+      const a = document.createElement('a'); a.textContent = t; a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.title = title; go.append(a);
+    });
+    const x = document.createElement('button'); x.textContent = '×'; x.title = 'Убрать из лайков';
+    x.onclick = () => { likes = likes.filter(o => o !== l); store.set('likes', likes); renderLikes(); updateLikeBtn(); };
+    go.append(x);
+    li.append(tr, go);
+    return li;
+  }));
+}
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+}
+// короткое сообщение в бегущей строке, потом возвращаем трек
+let flashTimer = null;
+function flash(text) {
+  setMarquee(text);
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => current && setMarquee(`${current.lastPlaying || current.title}  ***  ${current.title}  ***`), 2500);
+}
+
+// ---------- ссылка на канал: /soma#groovesalad ----------
+// replaceState меняет адрес без перезагрузки и без лишних записей в истории «назад»
+function setHash(id) { if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id); }
+function channelFromHash() { const id = decodeURIComponent(location.hash.slice(1)); return channels.find(c => c.id === id) || null; }
+window.addEventListener('hashchange', () => {
+  const c = channelFromHash();
+  if (!c || c.id === current?.id) return;
+  if (state === 'play' || state === 'buff') play(c);
+  else { current = selected = c; showCurrent(); render(); }
+});
+function copyLink() {
+  const url = location.origin + location.pathname + '#' + (current?.id || '');
+  navigator.clipboard?.writeText(url).then(() => flash('Ссылка скопирована: ' + url), () => flash(url));
+}
+
+// ---------- установка как приложение (PWA) ----------
+// Браузер сам решает, можно ли ставить, и присылает событие beforeinstallprompt —
+// тогда показываем пункт меню и кнопку. Safari его не шлёт: там «Поделиться → На экран Домой».
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); installEvt = e;
+  $('installItem').hidden = false;
+  showGetApp();
+});
+window.addEventListener('appinstalled', () => { installEvt = null; $('installItem').hidden = $('getApp').hidden = true; flash('Soma Amp установлен'); });
+
+// Карточка «Установить». Где браузер даёт системное окно установки — открываем его,
+// где нет (Firefox на компьютере, Safari) — показываем короткую инструкцию под этот браузер.
+const ua = navigator.userAgent;
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad|iPod/.test(ua) ? 'iPhone' : /Windows/.test(ua) ? 'Windows'
+  : /Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'компьютер';
+const browser = /Firefox\//.test(ua) ? 'firefox' : /Safari\//.test(ua) && !/Chrome|Chromium|Edg|YaBrowser/.test(ua) ? 'safari' : 'chromium';
+function showGetApp() {
+  if (isStandalone || location.protocol === 'file:' || store.get('gaHidden', false)) return;
+  $('gaOs').textContent = os;
+  $('getApp').hidden = false;
+}
+function installHelp() {
+  if (browser === 'firefox' && os === 'Android') return 'Меню <b>⋮</b> → <b>«Установить»</b> (или «Добавить на главный экран»).';
+  if (browser === 'firefox') return 'Firefox на компьютере пока не ставит сайты как приложения. Открой <b>deemmoor.ru/soma</b> в Chrome, Edge или Яндекс Браузере и нажми «Установить» — плеер получит свою иконку и отдельное окно. А в Firefox можно закрепить вкладку: правый клик по ней → <b>«Закрепить вкладку»</b>.';
+  if (browser === 'safari' && os === 'iPhone') return 'Кнопка <b>«Поделиться»</b> внизу экрана → <b>«На экран „Домой“»</b>.';
+  if (browser === 'safari') return 'Меню <b>«Файл»</b> → <b>«Добавить в Dock»</b>.';
+  return 'Значок <b>«Установить»</b> справа в адресной строке или меню <b>⋮</b> → <b>«Установить Soma Amp»</b>. Если пункта нет — обнови страницу: браузер предлагает установку не сразу.';
+}
+$('gaBtn').onclick = () => {
+  if (installEvt) { install(); return; }
+  $('gaHelp').innerHTML = installHelp();
+  $('gaHelp').hidden = !$('gaHelp').hidden;
+};
+$('gaClose').onclick = () => { $('getApp').hidden = true; store.set('gaHidden', true); };
+showGetApp();
+function install() { if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(() => installEvt = null); } }
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('/soma/sw.js', { scope: '/soma/' }).catch(() => {});
+}
+const touch = matchMedia('(pointer: coarse)').matches;
+
+// ---------- окна: shade-режим и перетаскивание, как в Winamp ----------
+const WINS = { main: 'mainWin', eq: 'eqWin', pl: 'plWin' };
+let shaded = store.get('shaded', {}), pos = store.get('pos', {});
+function setShade(name, on) {
+  shaded[name] = on; store.set('shaded', shaded);
+  $(WINS[name]).classList.toggle('shaded', on);
+}
+function applyPos(name) {
+  const p = pos[name];
+  $(WINS[name]).style.transform = p ? `translate(${p.x}px, ${p.y}px)` : '';
+}
+function dockAll() { pos = {}; store.set('pos', pos); Object.keys(WINS).forEach(applyPos); flash('Окна собраны вместе'); }
+const canDrag = () => matchMedia('(pointer: fine) and (min-width: 700px)').matches;
+document.querySelectorAll('.tb[data-win]').forEach(tb => {
+  const name = tb.dataset.win, win = $(WINS[name]);
+  tb.addEventListener('dblclick', e => { if (!e.target.closest('button')) setShade(name, !shaded[name]); });
+  tb.addEventListener('pointerdown', e => {
+    if (!canDrag() || e.button !== 0 || e.target.closest('button')) return;
+    const start = { x: e.clientX, y: e.clientY }, base = pos[name] || { x: 0, y: 0 };
+    const r0 = win.getBoundingClientRect();
+    let moved = false;
+    tb.setPointerCapture(e.pointerId);
+    const move = ev => {
+      let dx = ev.clientX - start.x, dy = ev.clientY - start.y;
+      if (!moved && Math.hypot(dx, dy) < 4) return;   // мелкое дрожание — не перетаскивание
+      moved = true; win.classList.add('dragging');
+      // не даём утащить заголовок за край экрана
+      dx = Math.min(Math.max(dx, 40 - r0.right), innerWidth - 40 - r0.left);
+      dy = Math.min(Math.max(dy, -r0.top), innerHeight - 20 - r0.top);
+      pos[name] = { x: base.x + dx, y: base.y + dy }; applyPos(name);
+    };
+    const up = () => {
+      tb.removeEventListener('pointermove', move); tb.removeEventListener('pointerup', up); tb.removeEventListener('pointercancel', up);
+      win.classList.remove('dragging');
+      if (!moved) return;
+      const p = pos[name];
+      if (Math.abs(p.x) < 16 && Math.abs(p.y) < 16) delete pos[name]; // рядом с домом — примагничиваем обратно
+      applyPos(name); store.set('pos', pos);
+    };
+    tb.addEventListener('pointermove', move); tb.addEventListener('pointerup', up); tb.addEventListener('pointercancel', up);
+  });
+});
+function initWindows() {
+  $('amp').classList.toggle('draggable', canDrag());
+  Object.keys(WINS).forEach(n => { setShade(n, !!shaded[n]); applyPos(n); });
+  if (!canDrag()) Object.keys(WINS).forEach(n => $(WINS[n]).style.transform = '');
+}
+addEventListener('resize', () => $('amp').classList.toggle('draggable', canDrag()));
+
+// ---------- таймер сна ----------
+function applyVolume() { if (audio) audio.volume = ($('volume').value / 100) * fade; }
+function cycleSleep() {
+  const i = SLEEP_STEPS.indexOf(sleepMin);
+  setSleep(SLEEP_STEPS[(i + 1) % SLEEP_STEPS.length]);
+}
+function setSleep(min) {
+  sleepMin = min; sleepEnd = min ? Date.now() + min * 60000 : 0; fade = 1; applyVolume();
+  $('sleepBtn').setAttribute('aria-pressed', String(!!min));
+  $('sleepLbl').hidden = $('sleepBox').hidden = !min;
+  document.querySelectorAll('[data-sleep]').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.sleep === min)));
+  flash(min ? `Таймер сна: ${min} мин` : 'Таймер сна выключен');
+}
+function tickSleep() {
+  if (!sleepEnd) return;
+  const left = sleepEnd - Date.now();
+  if (left <= 0) { stop(); setSleep(0); return; }
+  $('sleepBox').textContent = Math.ceil(left / 60000) + "'";
+  // последняя минута — громкость плавно уходит в ноль
+  const f = left < FADE_MS ? left / FADE_MS : 1;
+  if (Math.abs(f - fade) > 0.005) { fade = f; applyVolume(); }
+}
+
+function visible() {
+  const q = $('filter').value.trim().toLowerCase();
+  let list = listMode === 'chill' ? CHILL.map(id => channels.find(c => c.id === id)).filter(Boolean)
+    : listMode === 'fav' ? channels.filter(c => favs.has(c.id)) : channels.slice();
+  if (q) list = list.filter(c => (c.title + ' ' + c.genre + ' ' + (c.description || '')).toLowerCase().includes(q));
+  if (sortMode === 'title') list.sort((a, b) => a.title.localeCompare(b.title));
+  if (sortMode === 'listeners') list.sort((a, b) => (+b.listeners || 0) - (+a.listeners || 0));
+  if (sortMode === 'genre') list.sort((a, b) => a.genre.localeCompare(b.genre) || a.title.localeCompare(b.title));
+  return list;
+}
+
+function render() {
+  const list = visible();
+  const box = $('list');
+  box.replaceChildren(...list.map((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'pl-row' + (current?.id === c.id ? ' cur' : '') + (selected?.id === c.id ? ' sel' : '');
+    row.tabIndex = 0; row.setAttribute('role', 'option');
+    row.setAttribute('aria-selected', String(selected?.id === c.id));
+    row.title = c.description || c.genre;
+    const t = document.createElement('span'); t.className = 't'; t.textContent = `${i + 1}. ${c.title}`;
+    const g = document.createElement('span'); g.className = 'g'; g.textContent = c.listeners ? `${c.listeners} ♪` : c.genre;
+    const s = document.createElement('button'); s.className = 's' + (favs.has(c.id) ? ' on' : '');
+    s.textContent = favs.has(c.id) ? '★' : '☆'; s.title = 'Избранное';
+    s.onclick = e => { e.stopPropagation(); toggleFav(c, !favs.has(c.id)); };
+    row.append(t, g, s);
+    // одиночный клик только переносит подсветку, без перерисовки списка — иначе второй щелчок
+    // попадает в уже новую строку и двойной клик не срабатывает
+    row.onclick = () => {
+      if (touch) { play(c); return; } // на телефоне двойного клика нет — тап сразу включает канал
+      selected = c;
+      box.querySelectorAll('.pl-row.sel').forEach(r => { r.classList.remove('sel'); r.setAttribute('aria-selected', 'false'); });
+      row.classList.add('sel'); row.setAttribute('aria-selected', 'true');
+    };
+    row.ondblclick = e => { e.preventDefault(); play(c); };
+    row.onkeydown = e => { if (e.key === 'Enter') play(c); };
+    return row;
+  }));
+  if (!list.length) box.innerHTML = '<div class="pl-empty">Пусто. Сними поиск или выбери Playlist → Все каналы.</div>';
+  const pos = current ? list.findIndex(c => c.id === current.id) + 1 : 0;
+  $('plCount').textContent = `${pos}/${list.length}`;
+  document.querySelectorAll('[data-list]').forEach(b => b.setAttribute(b.classList.contains('oval') ? 'aria-pressed' : 'aria-checked', String(b.dataset.list === listMode)));
+  document.querySelectorAll('[data-sort]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sort === sortMode)));
+  box.querySelector('.cur')?.scrollIntoView({ block: 'nearest' });
+}
+
+function toggleFav(c, on) {
+  if (!c) return;
+  on ? favs.add(c.id) : favs.delete(c.id);
+  store.set('favs', [...favs]); render();
+}
+
+// ---------- эквалайзер ----------
+function buildEq() {
+  const bands = $('bands');
+  const mk = (label, val, cls, oninput) => {
+    const wrap = document.createElement('div'); wrap.className = 'band ' + cls;
+    const r = document.createElement('input');
+    r.type = 'range'; r.className = 'v'; r.min = -12; r.max = 12; r.step = 1; r.value = val;
+    r.setAttribute('orient', 'vertical'); r.setAttribute('aria-label', label + ' dB');
+    r.oninput = () => { oninput(+r.value); saveEq(); applyEq(); };
+    r.ondblclick = () => { r.value = 0; r.oninput(); };
+    const l = document.createElement('label'); l.textContent = label;
+    wrap.append(r, l); bands.append(wrap);
+    return r;
+  };
+  mk('PREAMP', eq.pre, 'pre', v => eq.pre = v).id = 'preamp';
+  FREQS.forEach((f, i) => mk(FLABELS[i], eq.bands[i], '', v => eq.bands[i] = v).dataset.band = i);
+  $('presetList').replaceChildren(...Object.keys(PRESETS).map(name => {
+    const li = document.createElement('li'); const b = document.createElement('button');
+    b.textContent = name; b.onclick = () => setPreset(name); li.append(b); return li;
+  }));
+  $('balance').value = eq.bal;
+  syncEqUi();
+}
+// AUTO: у каждого канала свои полосы EQ и PREAMP;
+// кнопка ON и баланс общие для всех. Без AUTO работает один общий EQ, как раньше.
+let eqAuto = store.get('eqAuto', false);
+let eqMap = store.get('eqMap', {});            // { groovesalad: {pre, bands}, ... }
+function saveEq() {
+  if (eqAuto && current) { eqMap[current.id] = { pre: eq.pre, bands: eq.bands.slice() }; store.set('eqMap', eqMap); }
+  const g = eqAuto ? store.get('eq', eq) : eq;  // общий EQ не трогаем, пока AUTO включён
+  store.set('eq', { ...g, on: eq.on, bal: eq.bal });
+}
+function loadEqFor(c) {
+  const src = (eqAuto && c && eqMap[c.id]) || store.get('eq', eq);
+  eq.pre = src.pre; eq.bands = src.bands.slice();
+  syncEqUi(); applyEq();
+}
+function setEqAuto(on) {
+  eqAuto = on; store.set('eqAuto', on);
+  $('eqAuto').setAttribute('aria-pressed', String(on));
+  $('mEqAuto')?.setAttribute('aria-checked', String(on));
+  loadEqFor(current);
+  flash(on ? 'EQ AUTO: у каждого канала свой эквалайзер' : 'EQ AUTO выключен: общий эквалайзер');
+}
+
+function setPreset(name) {
+  eq.bands = PRESETS[name].slice(); eq.pre = 0;
+  saveEq(); syncEqUi(); applyEq(); closeMenus();
+  setMarquee(`EQ: ${name}`); setTimeout(() => current && setMarquee(`${current.lastPlaying || current.title}  ***  ${current.title}  ***`), 2500);
+}
+function syncEqUi() {
+  $('preamp').value = eq.pre;
+  document.querySelectorAll('[data-band]').forEach(r => r.value = eq.bands[r.dataset.band]);
+  $('eqOn').setAttribute('aria-pressed', String(eq.on));
+  $('mEqOn').setAttribute('aria-checked', String(eq.on));
+  $('eqInd').className = eq.on ? 'on' : 'off';
+}
+
+// ---------- визуализация ----------
+const cv = $('viz'), g2 = cv.getContext('2d');
+const fbins = new Uint8Array(1024), tbins = new Uint8Array(2048);
+const peaks = new Array(20).fill(0);
+function lcdColor(name) { return getComputedStyle($('amp')).getPropertyValue(name).trim(); }
+let colFg = '', colDim = '';
+function refreshColors() { colFg = lcdColor('--lcd-fg'); colDim = lcdColor('--lcd-dim'); }
+function draw() {
+  const W = cv.width, H = cv.height;
+  g2.clearRect(0, 0, W, H);
+  const live = state === 'play';
+  if (visMode === 'bars') {
+    const bars = 20, bw = W / bars;
+    if (live && nodes) nodes.an.getByteFrequencyData(fbins);
+    for (let i = 0; i < bars; i++) {
+      let v = 0;
+      if (live && nodes) {
+        // столбики по шкале частот 40 Гц … 16 кГц — как ползунки эквалайзера (каждая октава одной ширины)
+        const hz = ctx.sampleRate / nodes.an.fftSize;
+        const f0 = 40 * Math.pow(400, i / bars), f1 = 40 * Math.pow(400, (i + 1) / bars);
+        const a = Math.max(1, Math.floor(f0 / hz)), b = Math.max(a + 1, Math.ceil(f1 / hz));
+        let m = 0; for (let k = a; k < b; k++) m = Math.max(m, fbins[k]);
+        v = m / 255;
+      } else if (live) v = 0.2 + 0.4 * Math.abs(Math.sin(Date.now() / 280 + i * .7)) * Math.random();
+      const h = Math.round(v * (H - 4) / 4) * 4;
+      g2.fillStyle = colFg;
+      for (let y = 0; y < h; y += 4) g2.fillRect(i * bw + 1, H - y - 3, bw - 2, 3);
+      peaks[i] = Math.max(h, peaks[i] - 1.2);
+      if (peaks[i] > 0) { g2.fillStyle = colDim; g2.fillRect(i * bw + 1, H - peaks[i] - 5, bw - 2, 2); }
+    }
+  } else if (visMode === 'scope') {
+    g2.strokeStyle = colFg; g2.lineWidth = 2; g2.beginPath();
+    if (live && nodes) {
+      nodes.an.getByteTimeDomainData(tbins);
+      for (let x = 0; x < W; x++) { const v = tbins[Math.floor(x / W * tbins.length)] / 255; x ? g2.lineTo(x, v * H) : g2.moveTo(x, v * H); }
+    } else { g2.moveTo(0, H / 2); g2.lineTo(W, H / 2); }
+    g2.stroke();
+  }
+  if ((state === 'play' || state === 'buff') && startedAt) {
+    let s;
+    if (clockMode === 'elapsed') s = Math.floor((Date.now() - startedAt) / 1000);
+    else { const d = new Date(); s = d.getHours() * 60 + d.getMinutes(); }
+    const a = Math.floor(s / 60), b = s % 60;
+    $('time').textContent = (a >= 100 ? String(a) : String(a).padStart(2, '0')) + ':' + String(b).padStart(2, '0');
+  } else if (state === 'pause') {
+    $('time').style.visibility = Math.floor(Date.now() / 500) % 2 ? 'hidden' : 'visible';
+  }
+  if (state !== 'pause') $('time').style.visibility = 'visible';
+  $('shadeTime').textContent = $('time').textContent;
+  tickSleep();
+  requestAnimationFrame(draw);
+}
+
+function setVis(m) {
+  visMode = m; store.set('vis', m);
+  document.querySelectorAll('[data-vis]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.vis === m)));
+}
+function cycleVis() { setVis({ bars: 'scope', scope: 'off', off: 'bars' }[visMode]); }
+function toggleClock() { clockMode = clockMode === 'elapsed' ? 'clock' : 'elapsed'; $('timeBtn').setAttribute('aria-pressed', String(clockMode === 'clock')); }
+
+// ---------- окна, вкладки, темы ----------
+function showWin(which, on) {
+  const win = which === 'eq' ? $('eqWin') : $('plWin');
+  win.hidden = !on;
+  $(which === 'eq' ? 'eqBtn' : 'plBtn').setAttribute('aria-pressed', String(on));
+  $(which === 'eq' ? 'mViewEq' : 'mViewPl').setAttribute('aria-checked', String(on));
+  store.set('win.' + which, on);
+}
+function setTab(t) {
+  showWin('eq', true);
+  ['eq', 'options', 'themes', 'likes'].forEach(n => $('pane-' + n).hidden = n !== t);
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+}
+function setSkin(name) {
+  if (!SKINS[name]) name = 'silver';
+  $('amp').dataset.skin = name; store.set('skin', name); refreshColors();
+  document.querySelectorAll('.skin-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === name)));
+  // полоска браузера на телефоне — в цвет шапки скина
+  document.querySelector('meta[name=theme-color]').content = getComputedStyle($('amp')).getPropertyValue('--title-b').trim();
+}
+function buildSkins() {
+  $('skins').replaceChildren(...Object.entries(SKINS).map(([id, name]) => {
+    const b = document.createElement('button'); b.className = 'skin-btn'; b.dataset.id = id;
+    // у превью свой data-skin: оно само красится переменными своего скина
+    const i = document.createElement('i'); i.dataset.skin = id;
+    b.append(i, name); b.onclick = () => setSkin(id); return b;
+  }));
+}
+
+function closeMenus() { document.querySelectorAll('.menu.open').forEach(m => m.classList.remove('open')); }
+document.addEventListener('click', e => {
+  const head = e.target.closest('.menu > button');
+  if (head) { const m = head.parentElement, was = m.classList.contains('open'); closeMenus(); if (!was) m.classList.add('open'); return; }
+  const act = e.target.closest('[data-act]');
+  if (act) { runAct(act.dataset.act); if (act.closest('.menu')) closeMenus(); return; }
+  if (!e.target.closest('.menu')) closeMenus();
+});
+function runAct(a) {
+  const [k, v] = a.split(':');
+  if (k === 'play') play(); else if (k === 'pause') pause(); else if (k === 'stop') stop();
+  else if (k === 'prev') step(-1); else if (k === 'next') step(1); else if (k === 'random') random();
+  else if (k === 'eqon') $('eqOn').click();
+  else if (k === 'vis') setVis(v);
+  else if (k === 'timer') toggleClock();
+  else if (k === 'sleep') setSleep(+v);
+  else if (k === 'copylink') copyLink();
+  else if (k === 'install') install();
+  else if (k === 'eqauto') setEqAuto(!eqAuto);
+  else if (k === 'dock') dockAll();
+  else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }
+  else if (k === 'toggle') showWin(v, (v === 'eq' ? $('eqWin') : $('plWin')).hidden);
+  else if (k === 'tab') setTab(v);
+  else if (k === 'list') { listMode = v; store.set('list', v); render(); }
+  else if (k === 'sort') { sortMode = v; store.set('sort', v); render(); }
+}
+
+// ---------- кнопки ----------
+$('play').onclick = () => play(selected && selected !== current ? selected : undefined);
+$('pause').onclick = pause;
+$('stop').onclick = stop;
+$('prev').onclick = () => step(-1);
+$('next').onclick = () => step(1);
+$('randBtn').onclick = random;
+$('visBtn').onclick = cycleVis; cv.onclick = cycleVis;
+$('timeBtn').onclick = toggleClock; $('time').onclick = toggleClock;
+$('plBtn').onclick = () => showWin('pl', $('plWin').hidden);
+$('eqBtn').onclick = () => showWin('eq', $('eqWin').hidden);
+document.querySelectorAll('[data-shade]').forEach(b => b.onclick = () => setShade(b.dataset.shade, !shaded[b.dataset.shade]));
+$('shade').onclick = () => { const on = $('eqWin').hidden && $('plWin').hidden; showWin('eq', on); showWin('pl', on); };
+$('mute').onclick = () => {
+  const on = $('mute').getAttribute('aria-pressed') !== 'true';
+  $('mute').setAttribute('aria-pressed', String(on));
+  if (audio) audio.muted = on;
+};
+$('volume').value = store.get('vol', 80);
+$('volume').oninput = e => { applyVolume(); store.set('vol', +e.target.value); };
+$('sleepBtn').onclick = cycleSleep;
+$('likeBtn').onclick = toggleLike;
+$('likesCopy').onclick = () => {
+  const text = likes.map(l => `${l.artist} - ${l.title}`).join('\n');
+  navigator.clipboard?.writeText(text).then(() => flash('Список лайков скопирован'), () => flash('Не удалось скопировать'));
+};
+$('balance').oninput = e => { eq.bal = +e.target.value; saveEq(); applyEq(); };
+$('balance').ondblclick = e => { e.target.value = 0; $('balance').oninput(e); };
+$('eqOn').onclick = () => { eq.on = !eq.on; saveEq(); syncEqUi(); applyEq(); };
+$('eqAuto').onclick = () => setEqAuto(!eqAuto);
+$('eqReset').onclick = () => setPreset('Flat');
+$('favAdd').onclick = () => toggleFav(selected || current, true);
+$('favRem').onclick = () => toggleFav(selected || current, false);
+$('filter').oninput = render;
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+
+// горячие клавиши по физическим клавишам — работают и в русской раскладке
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input[type=search]')) { if (e.key === 'Escape') e.target.blur(); return; }
+  if (e.altKey && e.code === 'KeyG') { e.preventDefault(); $('eqBtn').click(); return; }
+  if (e.altKey && e.code === 'KeyE') { e.preventDefault(); $('plBtn').click(); return; }
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  const map = { KeyZ: () => step(-1), KeyX: () => play(), KeyC: pause, KeyV: stop, KeyB: () => step(1), KeyS: random, KeyM: () => $('mute').click(), KeyL: toggleLike, KeyT: cycleSleep };
+  if (map[e.code]) { map[e.code](); return; }
+  if (e.code === 'Space' && !e.target.matches('button')) { e.preventDefault(); state === 'play' || state === 'buff' ? pause() : play(); }
+  const vol = d => { $('volume').value = Math.max(0, Math.min(100, +$('volume').value + d)); $('volume').oninput({ target: $('volume') }); };
+  if (e.code === 'ArrowUp' && !e.target.matches('input[type=range]')) { e.preventDefault(); vol(5); }
+  if (e.code === 'ArrowDown' && !e.target.matches('input[type=range]')) { e.preventDefault(); vol(-5); }
+});
+
+if ('mediaSession' in navigator) {
+  const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch {} };
+  h('play', () => play()); h('pause', pause); h('stop', stop);
+  h('previoustrack', () => step(-1)); h('nexttrack', () => step(1));
+}
+
+// ---------- старт ----------
+(async () => {
+  buildEq(); buildSkins(); setSkin(store.get('skin', 'silver')); setVis(visMode); setState('stop');
+  $('mHq').setAttribute('aria-checked', String(hq));
+  renderLikes(); updateLikeBtn(); initWindows();
+  $('eqAuto').setAttribute('aria-pressed', String(eqAuto)); $('mEqAuto').setAttribute('aria-checked', String(eqAuto));
+  document.querySelector('[data-sleep="0"]').setAttribute('aria-checked', 'true');
+  showWin('eq', store.get('win.eq', true)); showWin('pl', store.get('win.pl', true));
+  requestAnimationFrame(draw);
+  try {
+    channels = (await (await fetch('https://api.somafm.com/channels.json', { cache: 'no-store' })).json()).channels;
+    $('status').textContent = `${channels.length} каналов SomaFM · без рекламы и лимитов`;
+  } catch {
+    channels = FALLBACK;
+    $('status').textContent = 'api.somafm.com не ответил — показан запасной список';
+  }
+  // канал из ссылки важнее последнего прослушанного
+  const fromLink = channelFromHash();
+  current = selected = fromLink || channels.find(c => c.id === store.get('last', 'deepspaceone')) || null;
+  if (current) { showCurrent(); setHash(current.id); }
+  if (eqAuto) loadEqFor(current);
+  if (fromLink) setTimeout(() => flash(`${fromLink.title} — жми ▶`), 1200);
+  render();
+  setInterval(async () => {
+    try {
+      const fresh = (await (await fetch('https://api.somafm.com/channels.json', { cache: 'no-store' })).json()).channels;
+      fresh.forEach(f => { const c = channels.find(x => x.id === f.id); if (c) c.listeners = f.listeners; });
+      render();
+    } catch {}
+  }, 120000);
+})();
+</script>
+</body>
+</html>
