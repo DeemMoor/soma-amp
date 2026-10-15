@@ -583,6 +583,7 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li><button data-act="timer">Время: прошло / текущее</button></li>
         <li class="sep"></li>
         <li><button data-act="hq" id="mHq">Максимальное качество (до 320 kbps)</button></li>
+        <li class="desk-only"><button data-act="ontop" id="mOnTop">Поверх всех окон</button></li>
         <li class="sep"></li>
         <li><button data-act="sleep:0" data-sleep="0">Таймер сна: выкл <span class="k">T</span></button></li>
         <li><button data-act="sleep:15" data-sleep="15">Таймер сна: 15 мин</button></li>
@@ -1156,6 +1157,14 @@ function initWindows() {
 }
 addEventListener('resize', () => $('amp').classList.toggle('draggable', canDrag()));
 
+// «Поверх всех окон» (только в приложении), выбор помним между запусками
+let onTop = store.get('onTop', false);
+function setOnTop(on) {
+  onTop = on; store.set('onTop', on);
+  $('mOnTop').setAttribute('aria-checked', String(on));
+  window.__TAURI__.window.getCurrentWindow().setAlwaysOnTop(on);
+}
+
 // В приложении системной рамки нет: окно двигаем за любой заголовок .tb, а свернуть/закрыть — кнопками.
 // Не data-tauri-drag-region: у него двойной клик разворачивает окно, а у нас двойной клик — shade-режим.
 if (IS_DESKTOP) {
@@ -1174,6 +1183,7 @@ if (IS_DESKTOP) {
     appWin.setSize(new window.__TAURI__.dpi.LogicalSize(w, h));
   };
   new ResizeObserver(fitWindow).observe($('amp'));
+  setOnTop(onTop);
 }
 
 // ---------- таймер сна ----------
@@ -1416,6 +1426,7 @@ function runAct(a) {
   else if (k === 'sleep') setSleep(+v);
   else if (k === 'copylink') copyLink();
   else if (k === 'install') install();
+  else if (k === 'ontop') setOnTop(!onTop);
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
   else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }
