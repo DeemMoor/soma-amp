@@ -1,6 +1,7 @@
 // Точка сборки приложения: здесь настраиваем Tauri и запускаем окно.
 // Позже сюда же добавятся команды, которые JS вызывает в Rust.
 mod autostart;
+mod links;
 mod media_keys;
 mod power;
 mod settings;
@@ -73,6 +74,7 @@ pub fn run() {
             autostart::set_autostart,
             settings::settings_set,
             settings::settings_import,
+            links::open_url,
         ])
         .setup(|app| {
             create_main_window(app)?;

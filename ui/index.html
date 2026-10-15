@@ -1256,6 +1256,15 @@ if (IS_DESKTOP) {
   document.querySelector('[data-sleepdo="stop"]').setAttribute('aria-checked', 'true');
   appWin.onCloseRequested(e => { if (toTray) { e.preventDefault(); appWin.hide(); } });
 
+  // Внешние ссылки открываем в обычном браузере (Rust: src-tauri/src/links.rs):
+  // у окна приложения нет «новой вкладки», и target="_blank" внутри него ничего не делает
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="http"]');
+    if (!a) return;
+    e.preventDefault();
+    window.__TAURI__.core.invoke('open_url', { url: a.href }).catch(err => flash(String(err)));
+  });
+
   // Команды из трея и с медиаклавиш (их присылает Rust: src-tauri/src/tray.rs, media_keys.rs)
   window.__TAURI__.event.listen('player-action', ({ payload }) => {
     if (payload === 'toggle') state === 'stop' ? play() : pause();
