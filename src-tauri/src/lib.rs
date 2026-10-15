@@ -34,6 +34,14 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
+/// Адрес и порт встроенного сервера в установленной программе — те же, что у `cargo tauri dev`.
+/// Именно IP 127.0.0.1, а не имя localhost: SomaFM отдаёт поток странице с http://127.0.0.1:1430,
+/// а с http://localhost:1430 и http://tauri.localhost отвечает 403 (проверено на этапе 6.1).
+#[cfg(not(debug_assertions))]
+const LOCALHOST_HOST: &str = "127.0.0.1";
+#[cfg(not(debug_assertions))]
+const LOCALHOST_PORT: u16 = 1430;
+
 /// Создаёт главное окно по описанию из tauri.conf.json (там у него `create: false`).
 /// Создаём сами, а не отдаём Tauri, чтобы ещё до запуска страницы положить в окно настройки.
 fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
@@ -41,14 +49,23 @@ fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Er
     let script = store.init_script()?;
     app.manage(store);
 
-    let config = app
+    #[cfg_attr(debug_assertions, allow(unused_mut))]
+    let mut config = app
         .config()
         .app
         .windows
         .iter()
         .find(|w| w.label == MAIN_WINDOW)
-        .ok_or("в tauri.conf.json нет окна main")?;
-    tauri::WebviewWindowBuilder::from_config(app.handle(), config)?
+        .ok_or("в tauri.conf.json нет окна main")?
+        .clone();
+    // в установленной программе страницу раздаёт наш сервер (плагин tauri-plugin-localhost);
+    // в cargo tauri dev на этом же адресе работает сервер самого Tauri CLI
+    #[cfg(not(debug_assertions))]
+    {
+        let url = format!("http://{LOCALHOST_HOST}:{LOCALHOST_PORT}");
+        config.url = tauri::WebviewUrl::External(url.parse()?);
+    }
+    tauri::WebviewWindowBuilder::from_config(app.handle(), &config)?
         .initialization_script(&script)
         .build()?;
     Ok(())
@@ -56,12 +73,20 @@ fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Er
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // один экземпляр: второй запуск не открывает новое окно, а будит первое.
         // Плагин подключаем первым — чтобы второй экземпляр закрылся раньше, чем что-то создаст
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show_main_window(app);
-        }))
+        }));
+    // встроенный сервер — только в установленной программе: в cargo tauri dev порт 1430 уже занят
+    #[cfg(not(debug_assertions))]
+    let builder = builder.plugin(
+        tauri_plugin_localhost::Builder::new(LOCALHOST_PORT)
+            .host(LOCALHOST_HOST)
+            .build(),
+    );
+    builder
         // автозапуск с Windows; LaunchAgent — способ для macOS, на Windows не используется
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,

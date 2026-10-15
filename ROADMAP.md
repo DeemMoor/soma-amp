@@ -2,7 +2,8 @@
 
 Согласованные зависимости: `tauri` 2, `tauri-build`, `serde`/`serde_json`,
 официальные плагины Tauri: `tauri-plugin-global-shortcut`, `tauri-plugin-autostart`,
-`tauri-plugin-single-instance`, `tauri-plugin-updater` (последний — только на этапе 6).
+`tauri-plugin-single-instance`, `tauri-plugin-updater` (последний — только на этапе 6),
+`tauri-plugin-localhost` (согласован владельцем на этапе 6.1: поток SomaFM играет только с `localhost`).
 Всё остальное — спросить владельца.
 
 ## 0. Подготовка
@@ -14,7 +15,7 @@
 ## 1. Каркас Tauri
 - [x] 1.1 `cargo tauri init` с фронтом из `ui/` (без dev-сервера, `frontendDist: "../ui"`).
       Окно 480×900, заголовок «Soma Amp», иконки из `ui/icon-512.png` (`cargo tauri icon`).
-- [x] 1.2 Запустить `cargo tauri dev`, проверить, что каналы грузятся и **поток играет**.
+- [x] 1.2 Запустить `cargo tauri dev`, проверить, что каналы грузятся и **поток играет**. (В dev играло; в установленной программе — только после починки на этапе 6.1, см. PROGRESS.)
       Если SomaFM отвечает 403 (может смотреть на Referer `tauri.localhost`) — остановиться
       и рассказать владельцу, ничего не обходить.
 - [x] 1.3 Убрать из `ui/index.html` то, что нужно только сайту: регистрацию service worker,

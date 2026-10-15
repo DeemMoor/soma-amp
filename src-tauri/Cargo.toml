@@ -20,3 +20,4 @@ tauri = { version = "2.12.4", features = ["tray-icon"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-autostart = "2"
+tauri-plugin-localhost = "2"

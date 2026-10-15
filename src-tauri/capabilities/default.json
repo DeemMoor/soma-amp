@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "права главного окна: базовые + перетаскивание, свернуть, закрыть",
+  "description": "права главного окна (страница из самой программы и cargo tauri dev); то же для localhost — в localhost.json",
   "windows": [
     "main"
   ],
@@ -17,6 +17,12 @@
     "core:window:allow-hide",
     "core:window:allow-destroy",
     "core:window:allow-unminimize",
-    "core:window:allow-set-focus"
+    "core:window:allow-set-focus",
+    "allow-system-action",
+    "allow-autostart-enabled",
+    "allow-set-autostart",
+    "allow-settings-set",
+    "allow-settings-import",
+    "allow-open-url"
   ]
 }
