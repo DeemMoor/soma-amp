@@ -21,7 +21,8 @@ impl PowerAction {
         }
     }
 
-    /// Какую программу запустить и с какими аргументами.
+    /// Какую программу запустить и с какими аргументами — Windows.
+    #[cfg(windows)]
     fn command_line(&self) -> (&'static str, &'static [&'static str]) {
         match self {
             // /t 0 — без системной задержки: свои 60 секунд с отменой уже были в плеере
@@ -38,6 +39,27 @@ impl PowerAction {
                      [System.Windows.Forms.Application]::SetSuspendState('Suspend', $false, $false)",
                 ],
             ),
+        }
+    }
+
+    /// То же для macOS: выключение через «System Events» (как из меню Apple), сон — pmset.
+    #[cfg(target_os = "macos")]
+    fn command_line(&self) -> (&'static str, &'static [&'static str]) {
+        match self {
+            Self::Shutdown => (
+                "osascript",
+                &["-e", "tell application \"System Events\" to shut down"],
+            ),
+            Self::Sleep => ("pmset", &["sleepnow"]),
+        }
+    }
+
+    /// То же для Linux: systemd есть почти во всех дистрибутивах, права обычно не нужны.
+    #[cfg(all(unix, not(target_os = "macos")))]
+    fn command_line(&self) -> (&'static str, &'static [&'static str]) {
+        match self {
+            Self::Shutdown => ("systemctl", &["poweroff"]),
+            Self::Sleep => ("systemctl", &["suspend"]),
         }
     }
 }
@@ -102,6 +124,7 @@ mod tests {
         assert!(PowerAction::parse("").is_err());
     }
 
+    #[cfg(windows)]
     #[test]
     fn shutdown_is_immediate_power_off() {
         assert_eq!(
@@ -110,11 +133,35 @@ mod tests {
         );
     }
 
+    #[cfg(windows)]
     #[test]
     fn sleep_suspends_instead_of_hibernating() {
         let (program, args) = PowerAction::Sleep.command_line();
         assert_eq!(program, "powershell");
         assert!(args.iter().any(|a| a.contains("SetSuspendState('Suspend'")));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_commands() {
+        assert_eq!(
+            PowerAction::Sleep.command_line(),
+            ("pmset", &["sleepnow"][..])
+        );
+        assert_eq!(PowerAction::Shutdown.command_line().0, "osascript");
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    #[test]
+    fn linux_commands() {
+        assert_eq!(
+            PowerAction::Shutdown.command_line(),
+            ("systemctl", &["poweroff"][..])
+        );
+        assert_eq!(
+            PowerAction::Sleep.command_line(),
+            ("systemctl", &["suspend"][..])
+        );
     }
 
     #[test]

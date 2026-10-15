@@ -275,3 +275,22 @@
 **Файлы:** `ui/index.html`.
 **Новые слова:** —
 **Дальше:** 6.2 — автообновление (только с «да» владельца).
+
+## 2026-10-15 — 6.2 Автообновление, сборка под Windows/Linux/macOS, README
+**Что сделал (по просьбе владельца):**
+- **Автообновление:** плагин `tauri-plugin-updater`, модуль `src-tauri/src/updates.rs` (команды `check_update` и `install_update`). Help → «Проверить обновления…» теперь работает: спрашивает `latest.json` из последнего релиза на GitHub и, если версия новее, предлагает «Обновить» (скачать, поставить, перезапустить).
+- **Подпись обновлений:** ключ создан командой `cargo tauri signer generate` и лежит в `.secrets/` (в `.gitignore`, в git не попадает). Публичная половина — в `tauri.conf.json` (`plugins.updater.pubkey`). Программа ставит только обновления, подписанные этим ключом.
+- **Кроссплатформенность:** `power.rs` — команды сна/выключения для macOS (`pmset sleepnow`, `osascript … shut down`) и Linux (`systemctl suspend/poweroff`); `links.rs` — `open` на macOS, `xdg-open` на Linux. Для прозрачного окна на macOS включены `macOSPrivateApi` и feature `macos-private-api`. На macOS — ad-hoc подпись (`signingIdentity: "-"`), без неё на Apple Silicon программа не запустится. Цели сборки: `"all"` (Windows — `.exe`/`.msi`, Linux — `.deb`/`.rpm`/`.AppImage`, macOS — `.dmg`).
+- **GitHub Actions:** `.github/workflows/release.yml` — по тегу `v*` собирает Windows, Linux, macOS (Apple Silicon и Intel) через `tauri-apps/tauri-action` и создаёт **черновик** релиза вместе с `latest.json` для автообновления.
+- **README.md** — описание, скачивание и установка на каждой системе, горячие клавиши, где лежат настройки, сборка, выпуск версии.
+**Зачем:** чтобы программу можно было скачать под любую систему и получать обновления. Релиз — черновиком, чтобы владелец сам проверил файлы и нажал «Publish».
+**Проверено:** локально `cargo tauri build` с ключом даёт установщики 0.1.2 и файлы подписи `.sig`; `clippy` (debug и release) без замечаний, 20 тестов. Сборки под Linux и macOS проверит GitHub Actions — на Windows их не собрать. Сам процесс обновления проверим, когда выйдет следующая версия (0.1.3).
+**Важно:** **ключ из `.secrets/` нужно сохранить в надёжном месте.** Если его потерять, уже установленные программы не смогут обновиться.
+**Файлы:** `src-tauri/src/updates.rs`, `src-tauri/src/power.rs`, `src-tauri/src/links.rs`, `src-tauri/src/lib.rs`, `src-tauri/build.rs`, `src-tauri/capabilities/*.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `ui/index.html`, `.github/workflows/release.yml`, `README.md`, `.gitignore`.
+**Новые слова:**
+- `async fn` / `.await` — функция, которая умеет ждать (сеть, скачивание), не замораживая программу. Tauri сам запускает такие команды в фоне.
+- `#[cfg(target_os = "macos")]`, `#[cfg(all(unix, not(target_os = "macos")))]` — код для конкретной системы; при сборке под Windows кода для macOS просто нет.
+- `#[derive(Serialize)]` — `serde` сам научит структуру превращаться в JSON, чтобы отдать её в JS.
+- GitHub Actions — компьютеры GitHub, которые по событию (тег) выполняют сценарий из `.github/workflows/`.
+- тег (`git tag v0.1.2`) — метка на коммите «это версия 0.1.2»; по ней запускается сборка релиза.
+**Дальше:** владелец добавляет секреты в GitHub → тег `v0.1.2` → проверка черновика релиза → Publish.

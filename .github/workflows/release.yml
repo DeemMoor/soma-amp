@@ -1,0 +1,66 @@
+# Сборка установщиков для Windows, Linux и macOS и выпуск релиза на GitHub.
+# Запускается, когда в репозиторий пушат тег версии (например v0.1.2).
+# Релиз создаётся черновиком: владелец
+# проверяет файлы и сам нажимает «Publish release».
+#
+# Нужны секреты репозитория (Settings → Secrets and variables → Actions):
+#   TAURI_SIGNING_PRIVATE_KEY          — содержимое .secrets/soma-amp.key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — содержимое .secrets/password.txt
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: macos-latest          # Mac на Apple Silicon (M1 и новее)
+            args: '--target aarch64-apple-darwin'
+          - platform: macos-latest          # Mac на Intel
+            args: '--target x86_64-apple-darwin'
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Системные библиотеки для Linux
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev \
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # у нас нет package.json — берём Tauri CLI из npm той же второй версии
+          tauriScript: npx --yes @tauri-apps/cli@^2
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Soma Amp ${{ github.ref_name }}'
+          releaseBody: 'Установщики для Windows, Linux и macOS — в разделе Assets ниже. Как установить — см. README.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

@@ -36,7 +36,14 @@ fn open_in_browser(url: &str) -> std::io::Result<()> {
         .map(|_| ())
 }
 
-#[cfg(not(windows))]
+/// На macOS браузер по умолчанию открывает `open`.
+#[cfg(target_os = "macos")]
+fn open_in_browser(url: &str) -> std::io::Result<()> {
+    Command::new("open").arg(url).spawn().map(|_| ())
+}
+
+/// На Linux — `xdg-open` (есть во всех обычных рабочих окружениях).
+#[cfg(all(unix, not(target_os = "macos")))]
 fn open_in_browser(url: &str) -> std::io::Result<()> {
     Command::new("xdg-open").arg(url).spawn().map(|_| ())
 }

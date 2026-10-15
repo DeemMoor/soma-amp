@@ -8,6 +8,7 @@
   },
   "app": {
     "withGlobalTauri": true,
+    "macOSPrivateApi": true,
     "windows": [
       {
         "label": "main",
@@ -29,7 +30,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": "all",
+    "createUpdaterArtifacts": true,
     "publisher": "deemmoor",
     "shortDescription": "Плеер радио SomaFM",
     "longDescription": "Soma Amp — десктопный плеер радио SomaFM",
@@ -44,6 +46,9 @@
         "language": "ru-RU"
       }
     },
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -51,5 +56,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZCMEIyMDU1MTA3NEI5MTMKUldRVHVYUVFWU0FMYTFQKzVlS2VPQzg2V1ZsR2JZcStPbVkwdWlneGlYVXpwTk1RMWJkUnNoMU0K",
+      "endpoints": [
+        "https://github.com/DeemMoor/soma-amp/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

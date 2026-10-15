@@ -2,7 +2,7 @@
 
 Согласованные зависимости: `tauri` 2, `tauri-build`, `serde`/`serde_json`,
 официальные плагины Tauri: `tauri-plugin-global-shortcut`, `tauri-plugin-autostart`,
-`tauri-plugin-single-instance`, `tauri-plugin-updater` (последний — только на этапе 6),
+`tauri-plugin-single-instance`, `tauri-plugin-updater` (на этапе 6.2, с «да» владельца),
 `tauri-plugin-localhost` (согласован владельцем на этапе 6.1: поток SomaFM играет только с `localhost`).
 Всё остальное — спросить владельца.
 
@@ -51,7 +51,7 @@
 
 ## 6. Сборка и выпуск
 - [x] 6.1 `cargo tauri build` → установщик `.msi`/`.exe` (NSIS). Проверить установку и удаление.
-- [ ] 6.2 (только с «да» владельца) Автообновление через `tauri-plugin-updater` и GitHub/GitLab Releases.
+- [x] 6.2 (только с «да» владельца) Автообновление через `tauri-plugin-updater` и GitHub/GitLab Releases.
 
 ## Идеи на потом
 - Уведомление Windows о смене трека (бывший 5.1). Нужен `tauri-plugin-notification` (не согласован). Сначала проверить: возможно, название трека уже видно в системном окне громкости через Media Session.

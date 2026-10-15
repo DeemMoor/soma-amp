@@ -9,6 +9,8 @@ fn main() {
         "settings_set",
         "settings_import",
         "open_url",
+        "check_update",
+        "install_update",
     ];
     tauri_build::try_build(
         tauri_build::Attributes::new()

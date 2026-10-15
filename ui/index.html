@@ -621,7 +621,7 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li><a href="https://somafm.com/" target="_blank" rel="noopener">Открыть SomaFM.com</a></li>
         <li><a href="https://somafm.com/support/" target="_blank" rel="noopener">Поддержать SomaFM</a></li>
         <li class="sep desk-only"></li>
-        <li class="desk-only"><button data-act="updates" disabled title="Появится вместе с автообновлением">Проверить обновления…</button></li>
+        <li class="desk-only"><button data-act="updates">Проверить обновления…</button></li>
         <li class="desk-only"><button data-act="about">О программе</button></li>
       </ul></div>
     </nav>
@@ -790,6 +790,12 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
   <p class="about-meta">Плеер радио SomaFM в стиле Winamp<br>Автор: Deem Moor<br>
     <a href="https://github.com/DeemMoor/soma-amp" target="_blank" rel="noopener">github.com/DeemMoor/soma-amp</a></p>
   <button class="ga-btn" id="aboutClose">Закрыть</button>
+</div>
+<div class="about-box" id="updateBox" hidden role="dialog" aria-labelledby="updateTitle">
+  <p id="updateTitle"></p>
+  <p class="about-meta" id="updateNotes"></p>
+  <button class="ga-btn" id="updateGo">Обновить</button>
+  <button class="ga-btn" id="updateLater" style="margin-top:6px">Позже</button>
 </div>
 <div class="power-warn" id="powerWarn" hidden role="alertdialog" aria-labelledby="powerText">
   <p id="powerText"></p>
@@ -1379,6 +1385,26 @@ async function showAbout() {
 }
 $('aboutClose').onclick = () => { $('aboutBox').hidden = true; };
 
+// Help → «Проверить обновления…» (Rust: src-tauri/src/updates.rs, файлы — в GitHub Releases)
+async function checkUpdates() {
+  const { invoke } = window.__TAURI__.core;
+  flash('Проверяю обновления…');
+  try {
+    const upd = await invoke('check_update');
+    if (!upd) { flash('У тебя последняя версия'); return; }
+    $('updateTitle').textContent = `Доступна версия ${upd.version}`;
+    $('updateNotes').textContent = upd.notes || '';
+    $('updateBox').hidden = false;
+  } catch (err) { flash(String(err)); }
+}
+$('updateLater').onclick = () => { $('updateBox').hidden = true; };
+$('updateGo').onclick = async () => {
+  $('updateGo').disabled = true; $('updateGo').textContent = 'Скачиваю…';
+  try { await window.__TAURI__.core.invoke('install_update'); }   // после установки программа перезапустится сама
+  catch (err) { flash(String(err)); $('updateBox').hidden = true; }
+  $('updateGo').disabled = false; $('updateGo').textContent = 'Обновить';
+};
+
 function visible() {
   const q = $('filter').value.trim().toLowerCase();
   let list = listMode === 'chill' ? CHILL.map(id => channels.find(c => c.id === id)).filter(Boolean)
@@ -1602,6 +1628,7 @@ function runAct(a) {
   else if (k === 'sleepdo') setSleepDo(v);
   else if (k === 'quit') window.__TAURI__.window.getCurrentWindow().destroy();   // последнее окно закрыто — программа завершается
   else if (k === 'about') showAbout();
+  else if (k === 'updates') checkUpdates();
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
   else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }

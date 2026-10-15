@@ -6,6 +6,7 @@ mod media_keys;
 mod power;
 mod settings;
 mod tray;
+mod updates;
 
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -87,6 +88,8 @@ pub fn run() {
             .build(),
     );
     builder
+        // автообновление с GitHub Releases (адрес и публичный ключ — в tauri.conf.json)
+        .plugin(tauri_plugin_updater::Builder::new().build())
         // автозапуск с Windows; LaunchAgent — способ для macOS, на Windows не используется
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -100,6 +103,8 @@ pub fn run() {
             settings::settings_set,
             settings::settings_import,
             links::open_url,
+            updates::check_update,
+            updates::install_update,
         ])
         .setup(|app| {
             create_main_window(app)?;

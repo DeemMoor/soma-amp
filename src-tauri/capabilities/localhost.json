@@ -28,6 +28,8 @@
     "allow-set-autostart",
     "allow-settings-set",
     "allow-settings-import",
-    "allow-open-url"
+    "allow-open-url",
+    "allow-check-update",
+    "allow-install-update"
   ]
 }
