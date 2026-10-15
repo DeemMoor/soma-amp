@@ -25,13 +25,17 @@
 
 Последняя версия — на странице [Releases](https://github.com/DeemMoor/soma-amp/releases/latest).
 
-| Система | Файл | Автообновление |
-|---|---|---|
-| Windows 10/11 | `Soma.Amp_x.y.z_x64-setup.exe` (или `.msi`) | да |
-| macOS (Apple Silicon) | `Soma.Amp_aarch64.dmg` | да |
-| macOS (Intel) | `Soma.Amp_x64.dmg` | да |
-| Linux | `.AppImage` | да |
-| Linux (Debian/Ubuntu, Fedora) | `.deb`, `.rpm` | нет — обновлять новым пакетом |
+| Система | Файл |
+|---|---|
+| Windows 10/11 | `Soma.Amp_<версия>_x64-setup.exe` (или `.msi`) |
+| macOS (Apple Silicon, M1 и новее) | `Soma.Amp_<версия>_aarch64.dmg` |
+| macOS (Intel) | `Soma.Amp_<версия>_x64.dmg` |
+| Linux (любой) | `Soma.Amp_<версия>_amd64.AppImage` |
+| Linux (Debian/Ubuntu) | `Soma.Amp_<версия>_amd64.deb` |
+| Linux (Fedora/openSUSE) | `Soma.Amp-<версия>-1.x86_64.rpm` |
+
+Файлы `.sig`, `.app.tar.gz` и `latest.json` скачивать не нужно — их использует автообновление.
+Обновления приходят для всех вариантов установки.
 
 ### Первая установка
 
