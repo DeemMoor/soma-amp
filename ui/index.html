@@ -571,7 +571,7 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
       <div class="menu"><button>File</button><ul>
         <li class="site-only"><button data-act="copylink">Скопировать ссылку на канал</button></li>
         <li id="installItem" hidden><button data-act="install">Установить как приложение</button></li>
-        <li class="desk-only"><button data-act="quit">Выход</button></li>
+        <li class="desk-only"><button data-act="quit">Выход <span class="k">Alt+X</span></button></li>
       </ul></div>
       <div class="menu"><button>Play</button><ul>
         <li><button data-act="play">Играть <span class="k">X</span></button></li>
@@ -1652,6 +1652,7 @@ document.addEventListener('keydown', e => {
   if (e.target.matches('input[type=search]')) { if (e.key === 'Escape') e.target.blur(); return; }
   if (e.altKey && e.code === 'KeyG') { e.preventDefault(); $('eqBtn').click(); return; }
   if (e.altKey && e.code === 'KeyE') { e.preventDefault(); $('plBtn').click(); return; }
+  if (IS_DESKTOP && e.altKey && e.code === 'KeyX') { e.preventDefault(); window.__TAURI__.window.getCurrentWindow().destroy(); return; }
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const map = { KeyZ: () => step(-1), KeyX: () => play(), KeyC: pause, KeyV: stop, KeyB: () => step(1), KeyS: random, KeyM: () => $('mute').click(), KeyL: toggleLike, KeyT: cycleSleep };
   if (map[e.code]) { map[e.code](); return; }
