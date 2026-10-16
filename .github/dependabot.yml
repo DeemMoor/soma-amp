@@ -1,0 +1,19 @@
+# Раз в месяц GitHub сам предлагает обновить зависимости (PR в master, CI его проверит).
+# Все обновления одного вида — одним PR, чтобы не сыпалось по штуке.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: monthly
+    groups:
+      rust:
+        patterns: ['*']
