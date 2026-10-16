@@ -263,6 +263,7 @@ html.desktop, .desktop body { background: transparent; }
 .power-warn .ga-btn, .about-box .ga-btn { width: 100%; }
 .about-box .about-meta { font-size: 13px; line-height: 1.6; color: #c9c9d2; }
 .about-box a { color: #9cc4ff; }
+#updateNotes { white-space: pre-line; text-align: left; }
 /* «О программе» — шире и по левому краю, как обычное окно сведений */
 #aboutBox { width: min(420px, calc(100% - 40px)); padding: 20px; text-align: left; }
 .ab-head { display: flex; gap: 14px; align-items: center; }
@@ -1441,7 +1442,9 @@ async function checkUpdates() {
     const upd = await invoke('check_update');
     if (!upd) { flash('У тебя последняя версия'); return; }
     $('updateTitle').textContent = `Доступна версия ${upd.version}`;
-    $('updateNotes').textContent = upd.notes || '';
+    // из описания релиза берём только пункты «- …»: остальное (ссылка на README) — для страницы GitHub
+    $('updateNotes').textContent = (upd.notes || '').split('\n')
+      .filter(l => l.startsWith('- ')).map(l => '• ' + l.slice(2)).join('\n');
     $('updateBox').hidden = false;
   } catch (err) { flash(String(err)); }
 }
