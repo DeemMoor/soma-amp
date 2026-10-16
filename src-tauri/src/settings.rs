@@ -65,7 +65,7 @@ pub fn load(path: &Path) -> io::Result<Option<Settings>> {
     match serde_json::from_str(&text) {
         Ok(settings) => Ok(Some(settings)),
         Err(err) => {
-            eprintln!(
+            crate::log_error!(
                 "настройки: файл {} повреждён ({err}), откладываю его",
                 path.display()
             );

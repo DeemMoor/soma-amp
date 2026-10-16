@@ -302,3 +302,14 @@
 **Как посмотреть:** вкладка Actions на GitHub или `gh run list`.
 **Новые слова:** CI (continuous integration) — автоматическая проверка каждого изменения на чистой машине.
 **Дальше:** 7.3 — журнал ошибок в файл.
+
+## 2026-10-16 — 7.3 Журнал ошибок в файл
+**Что сделал:** модуль `src-tauri/src/logfile.rs` пишет в `soma-amp.log` (Windows: `%LOCALAPPDATA%\ru.deemmoor.somaamp\logs\`, macOS: `~/Library/Logs/ru.deemmoor.somaamp/`, Linux: `~/.local/share/ru.deemmoor.somaamp/logs/`). Макросы `log_error!`/`log_info!` заменили все `eprintln!`. Ошибки JS (`window.onerror`, необработанные промисы, сбои сохранения настроек) идут туда же командой `write_log`. Файл больше 1 МБ переименовывается в `.log.old`. Тестов 22.
+**Зачем:** у установленной программы нет консоли, ошибки пропадали бесследно. Плагин `tauri-plugin-log` не согласован, свой модуль — 100 строк без крейтов.
+**Проверено:** при запуске в журнале строка `[инфо] запуск Soma Amp 0.1.2`.
+**Файлы:** `src-tauri/src/logfile.rs`, `src-tauri/src/lib.rs`, `src-tauri/build.rs`, `src-tauri/capabilities/*.json`, `ui/index.html`.
+**Новые слова:**
+- `macro_rules!` — свой макрос, как `println!`; `#[macro_export]` и `#[macro_use]` делают его видным во всём проекте.
+- `OnceLock` — переменная, которую можно задать ровно один раз (путь к журналу при запуске).
+- `static` + `Mutex` — общий для всей программы замок, чтобы строки из разных потоков не перемешались.
+**Дальше:** 7.4 — порт 1430 занят.

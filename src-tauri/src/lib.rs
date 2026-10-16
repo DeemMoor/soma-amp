@@ -1,5 +1,7 @@
 // Точка сборки приложения: здесь настраиваем Tauri и запускаем окно.
 // Позже сюда же добавятся команды, которые JS вызывает в Rust.
+#[macro_use]
+mod logfile;
 mod autostart;
 mod links;
 mod media_keys;
@@ -17,7 +19,7 @@ const MAIN_WINDOW: &str = "main";
 /// Сам плеер живёт в JS: там событие `player-action` ловит `__TAURI__.event.listen`.
 fn send_player_command(app: &AppHandle, cmd: &str) {
     if let Err(err) = app.emit_to(MAIN_WINDOW, "player-action", cmd) {
-        eprintln!("не удалось отправить «{cmd}» в окно: {err}");
+        log_error!("не удалось отправить «{cmd}» в окно: {err}");
     }
 }
 
@@ -31,7 +33,7 @@ fn show_main_window(app: &AppHandle) {
         .and_then(|()| window.unminimize())
         .and_then(|()| window.set_focus());
     if let Err(err) = result {
-        eprintln!("не удалось показать окно: {err}");
+        log_error!("не удалось показать окно: {err}");
     }
 }
 
@@ -105,8 +107,11 @@ pub fn run() {
             links::open_url,
             updates::check_update,
             updates::install_update,
+            logfile::write_log,
         ])
         .setup(|app| {
+            logfile::init(app.path().app_log_dir()?);
+            log_info!("запуск Soma Amp {}", app.package_info().version);
             create_main_window(app)?;
             tray::create(app.handle())?;
             media_keys::init(app.handle())?;

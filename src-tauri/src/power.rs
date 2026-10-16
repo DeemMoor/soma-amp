@@ -78,7 +78,7 @@ pub fn system_action(action: String) -> Result<String, String> {
     let line = format!("{program} {}", args.join(" "));
 
     if is_dry_run() {
-        println!("[сухой режим] выполнил бы: {line}");
+        crate::log_info!("[сухой режим] выполнил бы: {line}");
         let what = match action {
             PowerAction::Sleep => "сон",
             PowerAction::Shutdown => "выключение",

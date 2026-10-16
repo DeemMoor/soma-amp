@@ -30,6 +30,7 @@
     "allow-settings-import",
     "allow-open-url",
     "allow-check-update",
-    "allow-install-update"
+    "allow-install-update",
+    "allow-write-log"
   ]
 }

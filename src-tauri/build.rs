@@ -11,6 +11,7 @@ fn main() {
         "open_url",
         "check_update",
         "install_update",
+        "write_log",
     ];
     tauri_build::try_build(
         tauri_build::Attributes::new()

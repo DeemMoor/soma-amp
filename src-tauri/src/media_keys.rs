@@ -43,7 +43,7 @@ pub fn init(app: &AppHandle) -> tauri::Result<()> {
     for key in KEYS {
         // клавишу мог уже занять другой плеер — это не повод падать, просто предупреждаем
         if let Err(err) = app.global_shortcut().register(Shortcut::new(None, key)) {
-            eprintln!("медиаклавиши: не удалось занять {key:?}: {err}");
+            crate::log_error!("медиаклавиши: не удалось занять {key:?}: {err}");
         }
     }
     Ok(())

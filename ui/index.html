@@ -10,7 +10,14 @@
 // IS_DESKTOP: страница открыта внутри приложения Soma Amp (Tauri), а не на сайте.
 // Тогда прячем то, что нужно только сайту: фото-фон, карточку «Установить», service worker, manifest.
 const IS_DESKTOP = !!window.__TAURI__;
-if (IS_DESKTOP) document.documentElement.classList.add('desktop');
+if (IS_DESKTOP) {
+  document.documentElement.classList.add('desktop');
+  // ошибки страницы — в журнал soma-amp.log (Rust: src-tauri/src/logfile.rs)
+  const logJs = msg => window.__TAURI__.core.invoke('write_log', { message: String(msg) }).catch(() => {});
+  addEventListener('error', e => logJs(`${e.message} (${e.filename}:${e.lineno})`));
+  addEventListener('unhandledrejection', e => logJs('promise: ' + (e.reason?.stack || e.reason)));
+  window.logJs = logJs;
+}
 else document.head.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/soma/manifest.webmanifest">');
 </script>
 <link rel="icon" type="image/png" sizes="192x192" href="/soma/icon-192.png">
@@ -856,7 +863,7 @@ function desktopStore() {
       }
     } catch {}
     for (const k in old) if (!(k in cache)) cache[k] = old[k];
-    invoke('settings_import', { entries: old }).catch(err => console.error('настройки:', err));
+    invoke('settings_import', { entries: old }).catch(err => window.logJs('настройки: ' + err));
   }
   return {
     // копия, как и у localStorage: правка полученного объекта не меняет сохранённое
@@ -864,7 +871,7 @@ function desktopStore() {
     set(k, v) {
       v = v === undefined ? null : JSON.parse(JSON.stringify(v));
       if (v === null) delete cache[k]; else cache[k] = v;
-      invoke('settings_set', { key: k, value: v }).catch(err => console.error('настройки:', err));
+      invoke('settings_set', { key: k, value: v }).catch(err => window.logJs('настройки: ' + err));
     },
   };
 }
