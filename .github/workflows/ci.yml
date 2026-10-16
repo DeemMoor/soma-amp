@@ -1,0 +1,43 @@
+# Проверки на каждый пуш и pull request: формат, clippy, тесты — на всех трёх системах.
+# Так ошибка в коде под Linux или macOS видна сразу, а не в день релиза.
+
+name: CI
+
+on:
+  push:
+    branches: [master, work]
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, ubuntu-22.04, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: src-tauri
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Системные библиотеки для Linux
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev \
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --release -- -D warnings
+      - run: cargo test
