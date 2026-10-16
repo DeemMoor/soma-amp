@@ -37,22 +37,34 @@ fn show_main_window(app: &AppHandle) {
     }
 }
 
-/// Адрес и порт встроенного сервера в установленной программе — те же, что у `cargo tauri dev`.
-/// Именно IP 127.0.0.1, а не имя localhost: SomaFM отдаёт поток странице с http://127.0.0.1:1430,
-/// а с http://localhost:1430 и http://tauri.localhost отвечает 403 (проверено на этапе 6.1).
-#[cfg(not(debug_assertions))]
+/// Адрес встроенного сервера в установленной программе — как у `cargo tauri dev`.
+/// Именно IP 127.0.0.1, а не имя localhost: SomaFM отдаёт поток странице с http://127.0.0.1:…,
+/// а с http://localhost:… и http://tauri.localhost отвечает 403 (проверено на этапе 6.1).
 const LOCALHOST_HOST: &str = "127.0.0.1";
-#[cfg(not(debug_assertions))]
-const LOCALHOST_PORT: u16 = 1430;
+/// Порты, которые пробуем по очереди: если 1430 занят другой программой, берём следующий.
+#[cfg_attr(debug_assertions, allow(dead_code))]
+const LOCALHOST_PORTS: std::ops::RangeInclusive<u16> = 1430..=1439;
+
+/// Первый свободный порт из диапазона. Проверяем, заняв его на миг и сразу отпустив.
+#[cfg_attr(debug_assertions, allow(dead_code))]
+fn find_free_port(host: &str, ports: std::ops::RangeInclusive<u16>) -> Option<u16> {
+    ports
+        .into_iter()
+        .find(|&port| std::net::TcpListener::bind((host, port)).is_ok())
+}
 
 /// Создаёт главное окно по описанию из tauri.conf.json (там у него `create: false`).
 /// Создаём сами, а не отдаём Tauri, чтобы ещё до запуска страницы положить в окно настройки.
-fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+/// `server_port` — порт нашего встроенного сервера; `None` — страница из самой программы
+/// (в `cargo tauri dev` это сервер Tauri CLI).
+fn create_main_window(
+    app: &mut tauri::App,
+    server_port: Option<u16>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let store = settings::SettingsStore::open(app.handle())?;
     let script = store.init_script()?;
     app.manage(store);
 
-    #[cfg_attr(debug_assertions, allow(unused_mut))]
     let mut config = app
         .config()
         .app
@@ -61,11 +73,8 @@ fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Er
         .find(|w| w.label == MAIN_WINDOW)
         .ok_or("в tauri.conf.json нет окна main")?
         .clone();
-    // в установленной программе страницу раздаёт наш сервер (плагин tauri-plugin-localhost);
-    // в cargo tauri dev на этом же адресе работает сервер самого Tauri CLI
-    #[cfg(not(debug_assertions))]
-    {
-        let url = format!("http://{LOCALHOST_HOST}:{LOCALHOST_PORT}");
+    if let Some(port) = server_port {
+        let url = format!("http://{LOCALHOST_HOST}:{port}");
         config.url = tauri::WebviewUrl::External(url.parse()?);
     }
     tauri::WebviewWindowBuilder::from_config(app.handle(), &config)?
@@ -76,19 +85,26 @@ fn create_main_window(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Er
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default()
+    // встроенный сервер — только в установленной программе: в cargo tauri dev его роль
+    // играет сервер Tauri CLI на том же 127.0.0.1:1430
+    #[cfg(not(debug_assertions))]
+    let server_port = find_free_port(LOCALHOST_HOST, LOCALHOST_PORTS);
+    #[cfg(debug_assertions)]
+    let server_port: Option<u16> = None;
+
+    let mut builder = tauri::Builder::default()
         // один экземпляр: второй запуск не открывает новое окно, а будит первое.
         // Плагин подключаем первым — чтобы второй экземпляр закрылся раньше, чем что-то создаст
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show_main_window(app);
         }));
-    // встроенный сервер — только в установленной программе: в cargo tauri dev порт 1430 уже занят
-    #[cfg(not(debug_assertions))]
-    let builder = builder.plugin(
-        tauri_plugin_localhost::Builder::new(LOCALHOST_PORT)
-            .host(LOCALHOST_HOST)
-            .build(),
-    );
+    if let Some(port) = server_port {
+        builder = builder.plugin(
+            tauri_plugin_localhost::Builder::new(port)
+                .host(LOCALHOST_HOST)
+                .build(),
+        );
+    }
     builder
         // автообновление с GitHub Releases (адрес и публичный ключ — в tauri.conf.json)
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -109,14 +125,44 @@ pub fn run() {
             updates::install_update,
             logfile::write_log,
         ])
-        .setup(|app| {
+        .setup(move |app| {
             logfile::init(app.path().app_log_dir()?);
             log_info!("запуск Soma Amp {}", app.package_info().version);
-            create_main_window(app)?;
+            match server_port {
+                Some(port) => log_info!("встроенный сервер: {LOCALHOST_HOST}:{port}"),
+                None if !cfg!(debug_assertions) => log_error!(
+                    "порты {}–{} заняты: плеер открыт без встроенного сервера, звук SomaFM работать не будет",
+                    LOCALHOST_PORTS.start(),
+                    LOCALHOST_PORTS.end()
+                ),
+                None => {}
+            }
+            create_main_window(app, server_port)?;
             tray::create(app.handle())?;
             media_keys::init(app.handle())?;
             Ok(())
         })
         .run(tauri::generate_context!())
         .expect("не удалось запустить приложение Tauri");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn skips_busy_port() {
+        // занимаем первый порт диапазона — функция должна взять следующий свободный
+        let busy = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = busy.local_addr().unwrap().port();
+        let found = find_free_port("127.0.0.1", port..=port.saturating_add(20));
+        assert!(found.is_some_and(|p| p != port));
+    }
+
+    #[test]
+    fn all_busy_means_none() {
+        let busy = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = busy.local_addr().unwrap().port();
+        assert_eq!(find_free_port("127.0.0.1", port..=port), None);
+    }
 }

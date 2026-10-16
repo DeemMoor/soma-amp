@@ -1,13 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "localhost",
-  "description": "те же права, что в default.json, но для страницы с http://127.0.0.1:1430 — так плеер открывается в установленной программе (плагин tauri-plugin-localhost)",
+  "description": "те же права, что в default.json, но для страницы с http://127.0.0.1 (порт 1430–1439) — так плеер открывается в установленной программе (плагин tauri-plugin-localhost)",
   "windows": [
     "main"
   ],
   "remote": {
     "urls": [
-      "http://127.0.0.1:1430"
+      "http://127.0.0.1:*"
     ]
   },
   "permissions": [
