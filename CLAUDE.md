@@ -6,8 +6,7 @@
 ## Что это
 
 - **Soma Amp** — десктопный плеер радио SomaFM в стиле Winamp 5 Modern.
-- Основа — веб-плеер с сайта `https://deemmoor.ru/soma/` (исходник лежит в `ui/index.html`,
-  оригинал — в репозитории сайта: `\\wsl.localhost\Ubuntu\home\deemmoor\projects\deemmoor\public\soma\`).
+- Основа — веб-плеер с сайта `https://deemmoor.ru/soma/` (исходник лежит в `ui/index.html`).
 - Стек: **Rust + Tauri 2**. Интерфейс — наш готовый HTML/CSS/JS из `ui/`, без сборщиков
   (никаких Vite/React/npm, пока владелец не попросит). Rust отвечает за то, чего браузер не умеет.
 - ОС разработки: **Windows**, терминал **PowerShell**. Пути — `C:\projects\soma-amp`.

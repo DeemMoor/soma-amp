@@ -1,6 +1,6 @@
 [package]
 name = "soma-amp"
-version = "0.1.4"
+version = "0.1.5"
 description = "Soma Amp — десктопный плеер радио SomaFM"
 authors = ["deemmoor"]
 edition = "2024"
