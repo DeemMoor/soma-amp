@@ -17,7 +17,21 @@ permissions:
   contents: write
 
 jobs:
+  # До сборки: тег совпадает с версией в Cargo.toml и в CHANGELOG.md есть раздел этой версии.
+  # Иначе сборка не начинается — кривой релиз не выйдет.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Версия и CHANGELOG
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          crate=$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -1)
+          [ "$crate" = "$ver" ] || { echo "::error::Тег $GITHUB_REF_NAME не совпадает с версией $crate в Cargo.toml"; exit 1; }
+          grep -q "^## \[$ver\]" CHANGELOG.md || { echo "::error::В CHANGELOG.md нет раздела [$ver]"; exit 1; }
+
   build:
+    needs: check
     strategy:
       fail-fast: false
       matrix:
