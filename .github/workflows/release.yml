@@ -50,6 +50,21 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: Описание релиза из CHANGELOG.md
+        id: notes
+        shell: bash
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          # берём строки между «## [версия]» и следующим «## [»
+          awk -v v="$ver" 'index($0, "## [" v "]") == 1 {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          {
+            echo 'body<<EOF_NOTES'
+            cat notes.md
+            echo
+            echo 'Какой файл скачать — в [README](https://github.com/DeemMoor/soma-amp#readme).'
+            echo 'EOF_NOTES'
+          } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,7 +75,7 @@ jobs:
           tauriScript: npx --yes @tauri-apps/cli@^2
           tagName: ${{ github.ref_name }}
           releaseName: 'Soma Amp ${{ github.ref_name }}'
-          releaseBody: 'Установщики для Windows, Linux и macOS — в разделе Assets ниже. Как установить — см. README.'
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

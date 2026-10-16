@@ -98,11 +98,12 @@ cargo test
 
 ## Как выпустить новую версию
 
-1. Поднять версию в `src-tauri/tauri.conf.json` и `src-tauri/Cargo.toml`.
-2. Закоммитить в `master` и поставить тег: `git tag v0.1.3 && git push origin master v0.1.3`.
-3. GitHub Actions (`.github/workflows/release.yml`) соберёт установщики для всех систем
+1. В `CHANGELOG.md` переименовать раздел «Не выпущено» в новую версию с датой.
+2. Поднять версию в `src-tauri/tauri.conf.json` и `src-tauri/Cargo.toml`.
+3. Закоммитить в `master` и поставить тег: `git tag v0.1.3 && git push origin master v0.1.3`.
+4. GitHub Actions (`.github/workflows/release.yml`) соберёт установщики для всех систем
    и создаст **черновик** релиза.
-4. Проверить файлы в черновике и нажать **Publish release** — после этого
+5. Проверить файлы в черновике и нажать **Publish release** — после этого
    установленные программы увидят обновление.
 
 Обновления подписываются ключом. Секреты репозитория (Settings → Secrets and variables → Actions):
