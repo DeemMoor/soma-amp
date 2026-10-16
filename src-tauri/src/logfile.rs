@@ -22,6 +22,15 @@ pub fn init(dir: PathBuf) {
     // журнал — вспомогательная вещь: если папку создать не вышло, программа работает дальше
     let _ = fs::create_dir_all(&dir);
     let _ = LOG_PATH.set(dir.join("soma-amp.log"));
+
+    // Паника — аварийная остановка Rust-кода (ошибка в программе, а не в данных).
+    // Сначала пишем её в журнал, потом отдаём стандартному обработчику: без этого
+    // от падения установленной программы не осталось бы и следа.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        write("ПАДЕНИЕ", &info.to_string());
+        default_hook(info);
+    }));
 }
 
 /// Записать строку в журнал (и в консоль — в режиме разработки её видно).
@@ -108,5 +117,17 @@ mod tests {
         assert_eq!(civil_from_days(59), (1970, 3, 1)); // 1970 — не високосный
         assert_eq!(civil_from_days(11_016), (2000, 2, 29)); // 2000 — високосный
         assert_eq!(civil_from_days(47_541), (2100, 3, 1)); // 2100 — нет (делится на 100)
+    }
+
+    #[test]
+    fn panic_goes_to_log() {
+        // единственный тест, который вызывает init: журнал — во временной папке
+        let dir = std::env::temp_dir().join(format!("soma-amp-test-{}", std::process::id()));
+        init(dir.clone());
+        // паника в отдельном потоке роняет только этот поток, а не тест
+        let _ = std::thread::spawn(|| panic!("проверка журнала")).join();
+        let text = fs::read_to_string(dir.join("soma-amp.log")).unwrap_or_default();
+        let _ = fs::remove_dir_all(&dir);
+        assert!(text.contains("[ПАДЕНИЕ]") && text.contains("проверка журнала"));
     }
 }
