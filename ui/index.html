@@ -647,6 +647,8 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
         <li><a href="https://somafm.com/support/" target="_blank" rel="noopener">Поддержать SomaFM</a></li>
         <li class="sep desk-only"></li>
         <li class="desk-only"><button data-act="updates">Проверить обновления…</button></li>
+        <li class="desk-only"><button data-act="report">Сообщить о проблеме…</button></li>
+        <li class="desk-only"><button data-act="openlog">Открыть журнал ошибок</button></li>
         <li class="desk-only"><button data-act="about">О программе</button></li>
       </ul></div>
     </nav>
@@ -1680,6 +1682,8 @@ function runAct(a) {
   else if (k === 'quit') window.__TAURI__.window.getCurrentWindow().destroy();   // последнее окно закрыто — программа завершается
   else if (k === 'about') showAbout();
   else if (k === 'updates') checkUpdates();
+  // черновик сообщения на GitHub с версией и концом журнала / сам журнал (src-tauri/src/about.rs, logfile.rs)
+  else if (k === 'report' || k === 'openlog') window.__TAURI__.core.invoke(k === 'report' ? 'report_issue' : 'open_log').catch(err => flash(String(err)));
   else if (k === 'eqauto') setEqAuto(!eqAuto);
   else if (k === 'dock') dockAll();
   else if (k === 'hq') { hq = !hq; store.set('hq', hq); $('mHq').setAttribute('aria-checked', String(hq)); if (state === 'play' || state === 'buff') play(); }

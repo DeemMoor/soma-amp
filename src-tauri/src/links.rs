@@ -29,7 +29,7 @@ pub fn open_url(url: String) -> Result<(), String> {
 /// Windows сам открывает адрес браузером по умолчанию. Через url.dll, а не через `cmd /c start`:
 /// так адрес не проходит через командную строку, и `&` в нём ничего не сломает.
 #[cfg(windows)]
-fn open_in_browser(url: &str) -> std::io::Result<()> {
+pub(crate) fn open_in_browser(url: &str) -> std::io::Result<()> {
     Command::new("rundll32")
         .args(["url.dll,FileProtocolHandler", url])
         .spawn()
@@ -38,13 +38,13 @@ fn open_in_browser(url: &str) -> std::io::Result<()> {
 
 /// На macOS браузер по умолчанию открывает `open`.
 #[cfg(target_os = "macos")]
-fn open_in_browser(url: &str) -> std::io::Result<()> {
+pub(crate) fn open_in_browser(url: &str) -> std::io::Result<()> {
     Command::new("open").arg(url).spawn().map(|_| ())
 }
 
 /// На Linux — `xdg-open` (есть во всех обычных рабочих окружениях).
 #[cfg(all(unix, not(target_os = "macos")))]
-fn open_in_browser(url: &str) -> std::io::Result<()> {
+pub(crate) fn open_in_browser(url: &str) -> std::io::Result<()> {
     Command::new("xdg-open").arg(url).spawn().map(|_| ())
 }
 

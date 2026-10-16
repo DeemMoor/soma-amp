@@ -31,6 +31,8 @@ fn main() {
         "install_update",
         "write_log",
         "app_info",
+        "report_issue",
+        "open_log",
     ];
     tauri_build::try_build(
         tauri_build::Attributes::new()

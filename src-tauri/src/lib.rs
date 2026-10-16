@@ -126,6 +126,8 @@ pub fn run() {
             updates::install_update,
             logfile::write_log,
             about::app_info,
+            about::report_issue,
+            logfile::open_log,
         ])
         .setup(move |app| {
             logfile::init(app.path().app_log_dir()?);

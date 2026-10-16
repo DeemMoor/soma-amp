@@ -27,6 +27,8 @@
     "allow-check-update",
     "allow-install-update",
     "allow-write-log",
-    "allow-app-info"
+    "allow-app-info",
+    "allow-report-issue",
+    "allow-open-log"
   ]
 }

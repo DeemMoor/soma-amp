@@ -92,6 +92,24 @@ macro_rules! log_info {
     ($($arg:tt)*) => { $crate::logfile::write("инфо", &format!($($arg)*)) };
 }
 
+/// Последние `n` строк журнала (для сообщения о проблеме). Журнала нет — пустая строка.
+pub fn tail(n: usize) -> String {
+    let text = LOG_PATH
+        .get()
+        .and_then(|p| fs::read_to_string(p).ok())
+        .unwrap_or_default();
+    let lines: Vec<&str> = text.lines().collect();
+    lines[lines.len().saturating_sub(n)..].join("\n")
+}
+
+/// Команда для JS: Help → «Открыть журнал ошибок» — файл откроется в «Блокноте» или аналоге.
+#[tauri::command]
+pub fn open_log() -> Result<(), String> {
+    let path = LOG_PATH.get().ok_or("журнал ещё не создан")?;
+    crate::links::open_in_browser(&path.to_string_lossy())
+        .map_err(|err| format!("не удалось открыть журнал: {err}"))
+}
+
 /// Команда для JS: записать в журнал ошибку из страницы (window.onerror и т.п.).
 #[tauri::command]
 pub fn write_log(message: String) {
