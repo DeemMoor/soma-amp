@@ -3,3 +3,8 @@ target/
 
 # ключ подписи обновлений — НИКОГДА не коммитить
 .secrets/
+
+# личные заметки владельца — только на его диске
+docs/START.md
+docs/ROADMAP.md
+docs/PROGRESS.md
