@@ -248,7 +248,7 @@ body {
 .desktop .bg, .desktop .credit { display: none; }
 html:not(.desktop) .desk-only { display: none; }
 .desktop .site-only { display: none; }
-.menu li button:disabled, .menu li button:disabled:hover { color: #999; background: none; cursor: default; }
+.menu li button:disabled, .menu li button:disabled:hover { color: var(--pl-dim); opacity: .6; background: none; cursor: default; }
 /* В приложении окно прозрачное: видны только окна плеера. Тень мягкая, как у окон Windows 11,
    а отступы — ровно под неё, чтобы край окна её не обрезал (снизу больше: тень смещена вниз) */
 html.desktop, .desktop body { background: transparent; }
@@ -316,17 +316,18 @@ html.desktop, .desktop body { background: transparent; }
 .menu { position: relative; }
 .menu ul {
   display: none; position: absolute; top: 100%; left: 0; z-index: 20; min-width: 190px; margin: 0; padding: 2px;
-  list-style: none; background: #f4f5f7; color: #111; border: 1px solid #5d6878; box-shadow: 2px 3px 6px rgba(0,0,0,.35);
+  list-style: none; background: var(--pl-bg); color: var(--pl-fg); border: 1px solid var(--frame-edge); box-shadow: 2px 3px 6px rgba(0,0,0,.35);
 }
 .menu.open ul { display: block; }
 .menu li button, .menu li a {
   display: flex; justify-content: space-between; gap: 16px; width: 100%; padding: 3px 10px 3px 18px; text-align: left;
-  background: none; border: 0; font: 11px var(--font-ui); color: #111; cursor: pointer; text-decoration: none; position: relative;
+  background: none; border: 0; font: 11px var(--font-ui); color: var(--pl-fg); cursor: pointer; text-decoration: none; position: relative;
 }
-.menu li button:hover, .menu li a:hover { background: #316ac5; color: #fff; }
-.menu li .k { color: #666; } .menu li button:hover .k { color: #dde; }
+/* меню в цветах плейлиста текущей темы: тот же фон, текст и подсветка выбранной строки */
+.menu li button:hover, .menu li a:hover { background: var(--pl-sel); color: var(--pl-fg); }
+.menu li .k { color: var(--pl-dim); } .menu li button:hover .k { color: var(--pl-fg); }
 .menu li [aria-checked=true]::before { content: "✓"; position: absolute; left: 5px; }
-.menu li.sep { height: 1px; background: #c3c7cf; margin: 2px 0; }
+.menu li.sep { height: 1px; background: var(--pl-dim); opacity: .35; margin: 2px 0; }
 
 .tb { cursor: default; }
 .tb .tb-title { pointer-events: none; }
