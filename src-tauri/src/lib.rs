@@ -2,6 +2,7 @@
 // Позже сюда же добавятся команды, которые JS вызывает в Rust.
 #[macro_use]
 mod logfile;
+mod about;
 mod autostart;
 mod links;
 mod media_keys;
@@ -124,6 +125,7 @@ pub fn run() {
             updates::check_update,
             updates::install_update,
             logfile::write_log,
+            about::app_info,
         ])
         .setup(move |app| {
             logfile::init(app.path().app_log_dir()?);

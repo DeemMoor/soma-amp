@@ -26,6 +26,7 @@
     "allow-open-url",
     "allow-check-update",
     "allow-install-update",
-    "allow-write-log"
+    "allow-write-log",
+    "allow-app-info"
   ]
 }

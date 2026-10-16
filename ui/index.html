@@ -263,6 +263,22 @@ html.desktop, .desktop body { background: transparent; }
 .power-warn .ga-btn, .about-box .ga-btn { width: 100%; }
 .about-box .about-meta { font-size: 13px; line-height: 1.6; color: #c9c9d2; }
 .about-box a { color: #9cc4ff; }
+/* «О программе» — шире и по левому краю, как обычное окно сведений */
+#aboutBox { width: min(420px, calc(100% - 40px)); padding: 20px; text-align: left; }
+.ab-head { display: flex; gap: 14px; align-items: center; }
+.ab-head img { width: 56px; height: 56px; }
+.ab-head b { font-size: 20px; }
+.ab-sub { color: #9a9aa6; margin-top: 2px; }
+#aboutBox hr { border: 0; border-top: 1px solid rgba(255,255,255,.12); margin: 14px 0; }
+#aboutBox .ab-desc { margin: 14px 0 0; font-size: 13px; }
+.ab-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; margin: 0; }
+.ab-grid dt { color: #9a9aa6; }
+.ab-grid dd { margin: 0; overflow-wrap: anywhere; }
+#aboutBox .ab-copy { margin: 0; color: #9a9aa6; font-size: 12px; }
+.ab-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+#aboutBox .ab-btns .ga-btn { width: auto; padding: 0 18px; }
+#aboutBox .ab-btns .ab-main { background: #3d7be0; }
+#aboutBox .ab-btns .ab-main:hover { background: #4f8bf0; }
 .desktop .win { box-shadow: inset 1px 1px 0 rgba(255,255,255,.7), inset -1px -1px 0 rgba(0,0,0,.25), 0 10px 24px rgba(0,0,0,.3), 0 2px 6px rgba(0,0,0,.2); }
 /* Карточка «Установить» — последним блоком под плейлистом, ничего не закрывает */
 .get-app {
@@ -794,10 +810,24 @@ body { padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); }
   </aside>
 </div>
 <div class="about-box" id="aboutBox" hidden role="dialog" aria-labelledby="aboutTitle">
-  <p id="aboutTitle"><b>Soma Amp</b> <span id="aboutVer"></span></p>
-  <p class="about-meta">Плеер радио SomaFM в стиле Winamp<br>Автор: Deem Moor<br>
-    <a href="https://github.com/DeemMoor/soma-amp" target="_blank" rel="noopener">github.com/DeemMoor/soma-amp</a></p>
-  <button class="ga-btn" id="aboutClose">Закрыть</button>
+  <div class="ab-head">
+    <img src="icon-192.png" alt="">
+    <div><b id="aboutTitle">Soma Amp</b><div class="ab-sub" id="aboutVer"></div></div>
+  </div>
+  <p class="ab-desc">Плеер радио SomaFM в стиле Winamp 5: все каналы SomaFM, эквалайзер, лайки треков, таймер сна, цветовые темы.</p>
+  <hr>
+  <dl class="ab-grid">
+    <dt>Автор</dt><dd>Deem Moor</dd>
+    <dt>Сайт</dt><dd><a href="https://github.com/DeemMoor/soma-amp" target="_blank" rel="noopener">github.com/DeemMoor/soma-amp</a></dd>
+    <dt>Сборка</dt><dd id="aboutBuild">—</dd>
+    <dt>Движок</dt><dd id="aboutEngine">—</dd>
+  </dl>
+  <hr>
+  <p class="ab-copy">© 2026 Deem Moor, лицензия MIT. Радио — SomaFM.com. Используются Tauri, wry и tao.</p>
+  <div class="ab-btns">
+    <button class="ga-btn" id="aboutCopyInfo">Скопировать сведения</button>
+    <button class="ga-btn ab-main" id="aboutClose">Закрыть</button>
+  </div>
 </div>
 <div class="about-box" id="updateBox" hidden role="dialog" aria-labelledby="updateTitle">
   <p id="updateTitle"></p>
@@ -1386,12 +1416,22 @@ function warnPower(action) {
 function cancelPower() { clearInterval(powerTimer); powerTimer = 0; $('powerWarn').hidden = true; }
 $('powerCancel').onclick = () => { cancelPower(); flash('Отменено'); };
 
-// Help → «О программе» (только в приложении): версию берём у самой программы (tauri.conf.json)
+// Help → «О программе» (только в приложении). Сведения отдаёт Rust: src-tauri/src/about.rs
+let aboutText = '';
 async function showAbout() {
-  $('aboutVer').textContent = 'версия ' + await window.__TAURI__.app.getVersion().catch(() => '?');
+  const i = await window.__TAURI__.core.invoke('app_info').catch(() => null);
+  if (i) {
+    $('aboutVer').textContent = `версия ${i.version} · ${i.platform}`;
+    $('aboutBuild').textContent = `${i.build_date} · ${i.commit}`;
+    $('aboutEngine').textContent = i.engine;
+    aboutText = `Soma Amp ${i.version} (${i.platform})\nСборка: ${i.build_date} · ${i.commit}\nДвижок: ${i.engine}`;
+  }
   $('aboutBox').hidden = false;
 }
 $('aboutClose').onclick = () => { $('aboutBox').hidden = true; };
+// сведения в буфер обмена — удобно вставить в сообщение об ошибке
+$('aboutCopyInfo').onclick = () => navigator.clipboard.writeText(aboutText)
+  .then(() => flash('Сведения скопированы'), () => flash('Не удалось скопировать'));
 
 // Help → «Проверить обновления…» (Rust: src-tauri/src/updates.rs, файлы — в GitHub Releases)
 async function checkUpdates() {
