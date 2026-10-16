@@ -5,6 +5,7 @@ description = "Soma Amp — десктопный плеер радио SomaFM"
 authors = ["deemmoor"]
 edition = "2024"
 rust-version = "1.90"
+license = "MIT"
 
 [lib]
 name = "soma_amp_lib"
