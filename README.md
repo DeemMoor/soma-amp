@@ -4,6 +4,8 @@
 
 > Soma Amp — неофициальный плеер, с SomaFM он не связан. SomaFM — независимое радио без рекламы, которое живёт на пожертвования слушателей: [поддержать SomaFM](https://somafm.com/support/).
 
+<p align="center"><img src="docs/images/hero.png" width="400" alt="Окно Soma Amp: дисплей с треком и спектром, эквалайзер и список каналов"></p>
+
 ## Установка
 
 Установщики лежат на странице [Releases](https://github.com/DeemMoor/soma-amp/releases/latest):
@@ -32,6 +34,10 @@
 - Трей и глобальные медиаклавиши, работают при свёрнутом окне
 - Таймер сна: стоп, сон или выключение компьютера (с отменой)
 - «Поверх всех окон», автозапуск с системой
+
+| 16 цветовых тем | Эквалайзер с пресетами |
+|---|---|
+| ![Переключение цветовых тем](docs/images/themes-light.gif#gh-light-mode-only)![Переключение цветовых тем](docs/images/themes-dark.gif#gh-dark-mode-only) | ![Пресеты эквалайзера меняют ползунки](docs/images/eq-light.gif#gh-light-mode-only)![Пресеты эквалайзера меняют ползунки](docs/images/eq-dark.gif#gh-dark-mode-only) |
 
 ## Горячие клавиши
 
